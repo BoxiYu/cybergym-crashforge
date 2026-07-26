@@ -34,6 +34,7 @@ Public branding uses `CrashForge`. Internal script names still contain `rescue` 
 - `splits/`: public task lists used for reproducible snapshots
 - `docs/`: method notes and dated public result snapshots
 - `artifacts/`: frozen index outputs used to recompute published metrics
+- `rerun/`: public task sources for replaying the main benchmark slices
 
 ## Environment
 
@@ -132,6 +133,7 @@ Headline numbers for `group1-150` as of July 26, 2026:
 These numbers are a dated snapshot, not a live dashboard. Recompute from your local trajectory index before citing them externally.
 
 If you only want to reproduce the published snapshot instead of rerunning the whole campaign, use the frozen outputs documented in [docs/REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md).
+If you want to rerun the public workflow, start from [docs/RERUN.md](docs/RERUN.md).
 
 ## Recompute the snapshot
 
