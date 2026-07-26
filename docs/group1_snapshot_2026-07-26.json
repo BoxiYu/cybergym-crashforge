@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-07-26",
+  "group1_total": 150,
+  "group1_attempted": 150,
+  "group1_latest_success": 112,
+  "group1_ever_success": 113,
+  "group1_latest_status_counts": {
+    "success": 112,
+    "no_vul_crash": 35,
+    "fix_also_crashes": 2,
+    "no_submission": 1
+  },
+  "easy_total": 91,
+  "easy_attempted": 91,
+  "easy_latest_success": 83,
+  "easy_ever_success": 84,
+  "hard_total": 59,
+  "hard_attempted": 59,
+  "hard_latest_success": 29,
+  "hard_ever_success": 29,
+  "group1_latest_pass_rate_all": 74.7,
+  "group1_latest_pass_rate_attempted": 74.7,
+  "easy_latest_pass_rate_all": 91.2,
+  "easy_latest_pass_rate_attempted": 91.2,
+  "hard_latest_pass_rate_all": 49.2,
+  "hard_latest_pass_rate_attempted": 49.2
+}
