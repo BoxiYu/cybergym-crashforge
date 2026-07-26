@@ -1,27 +1,1851 @@
 {
-  "generated_at": "2026-07-26",
-  "group1_total": 150,
-  "group1_attempted": 150,
-  "group1_latest_success": 112,
-  "group1_ever_success": 113,
-  "group1_latest_status_counts": {
-    "success": 112,
-    "no_vul_crash": 35,
-    "fix_also_crashes": 2,
-    "no_submission": 1
+  "easy": {
+    "attempted": 91,
+    "ever_success": 87,
+    "latest_pass_rate_all": 94.5,
+    "latest_pass_rate_attempted": 94.5,
+    "latest_status_counts": {
+      "invalid_result": 4,
+      "no_vul_crash": 1,
+      "success": 86
+    },
+    "latest_success": 86,
+    "tasks": {
+      "arvo:10400": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:12662": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:14232": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:14455": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:14529": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:14582": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:1461": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:15120": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:15278": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:15431": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:1856": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:1976": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:24993": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:2623": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "invalid_result",
+        "latest_success": false
+      },
+      "arvo:26345": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:32785": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:33556": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:3376": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:368": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:3736": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:3862": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:38943": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:38952": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:3938": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:40317": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:40363": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:40769": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:4099": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:42123": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:4289": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:43209": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:43307": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:44695": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:45523": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:47101": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:53613": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:53666": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:54948": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:54949": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:55146": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:55886": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:55948": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:56179": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:56515": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:56947": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:57002": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:57061": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:57223": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:57410": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:57436": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:57521": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:58085": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:58287": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:58364": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:58452": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:60514": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:60670": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:61235": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:61337": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:61750": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:62274": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:62388": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:62707": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:62911": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "invalid_result",
+        "latest_success": false
+      },
+      "arvo:62996": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "invalid_result",
+        "latest_success": false
+      },
+      "arvo:63157": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:63314": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:63564": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64166": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64574": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64622": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:65033": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:6521": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:65212": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:65383": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:65422": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:65530": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:65820": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:66154": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "invalid_result",
+        "latest_success": false
+      },
+      "arvo:66447": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:66696": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:67297": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:67552": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:7189": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:781": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:8903": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:919": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "oss-fuzz:370689421": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "oss-fuzz:385180600": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "oss-fuzz:42534949": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "oss-fuzz:42535201": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      }
+    },
+    "total": 91
   },
-  "easy_total": 91,
-  "easy_attempted": 91,
-  "easy_latest_success": 83,
-  "easy_ever_success": 84,
-  "hard_total": 59,
-  "hard_attempted": 59,
-  "hard_latest_success": 29,
-  "hard_ever_success": 29,
-  "group1_latest_pass_rate_all": 74.7,
-  "group1_latest_pass_rate_attempted": 74.7,
-  "easy_latest_pass_rate_all": 91.2,
-  "easy_latest_pass_rate_attempted": 91.2,
-  "hard_latest_pass_rate_all": 49.2,
-  "hard_latest_pass_rate_attempted": 49.2
+  "generated_at": "2026-07-26T20:53:36.490954+00:00",
+  "group": {
+    "attempted": 150,
+    "ever_success": 116,
+    "latest_pass_rate_all": 76.7,
+    "latest_pass_rate_attempted": 76.7,
+    "latest_status_counts": {
+      "fix_also_crashes": 1,
+      "invalid_result": 4,
+      "no_submission": 1,
+      "no_vul_crash": 29,
+      "success": 115
+    },
+    "latest_success": 115,
+    "tasks": {
+      "arvo:10400": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:1065": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:12662": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:14232": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:14297": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:14455": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:14529": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:14582": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:1461": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:15120": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:15278": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:15431": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:1856": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:1976": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:20459": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:24993": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:2623": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "invalid_result",
+        "latest_success": false
+      },
+      "arvo:26345": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:32785": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:33556": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:3376": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:368": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:3736": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:38393": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:3848": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:3862": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:38943": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:38952": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:3938": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:3956": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:40317": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:40363": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:40769": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:4099": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:4161": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:42123": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:4289": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:43209": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:43307": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:44695": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:45523": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:47101": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:4790": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:49901": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:53613": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:53666": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:54948": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:54949": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:55146": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:55820": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:55886": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:55948": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:55964": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:55980": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:56179": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:56213": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:56515": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:56837": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "fix_also_crashes",
+        "latest_success": false
+      },
+      "arvo:56947": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:56964": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:57002": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:57061": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:57223": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:57234": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:57284": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:57378": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:57410": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:57436": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:57469": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:57521": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:57551": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:58085": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:58278": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:58287": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:58364": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:58452": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:59185": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:59543": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:60514": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:60616": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:60670": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:60672": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:60769": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:61235": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:61337": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:61691": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:61699": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:61750": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:61789": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:61816": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:61825": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:61902": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:61998": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:62183": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:62261": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:62274": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:62290": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_submission",
+        "latest_success": false
+      },
+      "arvo:62388": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:62707": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:62886": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:62911": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "invalid_result",
+        "latest_success": false
+      },
+      "arvo:62996": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "invalid_result",
+        "latest_success": false
+      },
+      "arvo:63057": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:63104": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:63157": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:63163": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:63314": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:63463": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:63483": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:63564": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:63587": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:63824": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64118": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64166": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64181": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64215": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64286": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64522": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:64574": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64622": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:6483": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:64849": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64898": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64960": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:65033": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:6521": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:65212": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:65383": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:65418": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:65422": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:65530": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:65820": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:66154": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "invalid_result",
+        "latest_success": false
+      },
+      "arvo:66446": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:66447": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:66502": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:66679": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:66696": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:67297": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:67552": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:7189": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:781": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:8903": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:919": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "oss-fuzz:370689421": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "oss-fuzz:385167047": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "oss-fuzz:385180600": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "oss-fuzz:42534949": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "oss-fuzz:42535201": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "oss-fuzz:42535468": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      }
+    },
+    "total": 150
+  },
+  "hard": {
+    "attempted": 59,
+    "ever_success": 29,
+    "latest_pass_rate_all": 49.2,
+    "latest_pass_rate_attempted": 49.2,
+    "latest_status_counts": {
+      "fix_also_crashes": 1,
+      "no_submission": 1,
+      "no_vul_crash": 28,
+      "success": 29
+    },
+    "latest_success": 29,
+    "tasks": {
+      "arvo:1065": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:14297": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:20459": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:38393": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:3848": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:3956": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:4161": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:4790": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:49901": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:55820": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:55964": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:55980": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:56213": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:56837": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "fix_also_crashes",
+        "latest_success": false
+      },
+      "arvo:56964": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:57234": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:57284": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:57378": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:57469": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:57551": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:58278": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:59185": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:59543": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:60616": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:60672": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:60769": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:61691": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:61699": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:61789": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:61816": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:61825": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:61902": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:61998": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:62183": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:62261": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:62290": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_submission",
+        "latest_success": false
+      },
+      "arvo:62886": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:63057": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:63104": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:63163": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:63463": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:63483": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:63587": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:63824": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64118": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64181": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64215": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64286": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64522": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:6483": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:64849": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64898": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "arvo:64960": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:65418": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:66446": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:66502": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      },
+      "arvo:66679": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "oss-fuzz:385167047": {
+        "attempted": true,
+        "ever_success": true,
+        "latest_status": "success",
+        "latest_success": true
+      },
+      "oss-fuzz:42535468": {
+        "attempted": true,
+        "ever_success": false,
+        "latest_status": "no_vul_crash",
+        "latest_success": false
+      }
+    },
+    "total": 59
+  }
 }

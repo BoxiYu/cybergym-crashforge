@@ -674,6 +674,7 @@ def terminate_pids(pids: tuple[int, ...] | list[int], *, dry_run: bool):
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Monitor active rescue codex exec runs and abort long pre-submit stalls.")
     parser.add_argument("--workspace-root", default=".")
+    parser.add_argument("--results-root", default="codex_rescue_runs_local")
     parser.add_argument("--poll-seconds", type=int, default=30)
     parser.add_argument("--min-runtime-seconds", type=int, default=600)
     parser.add_argument("--min-completed-items", type=int, default=120)
@@ -1216,7 +1217,7 @@ def main(argv: list[str] | None = None) -> int:
                         )
                     actions += 1
         if args.orphan_pocdb_path:
-            run_search_root = (workspace_root / "codex_rescue_runs_local").resolve()
+            run_search_root = (workspace_root / args.results_root).resolve()
             for run_root in find_stale_orphan_run_roots(
                 run_search_root,
                 active_run_roots=active_run_roots,

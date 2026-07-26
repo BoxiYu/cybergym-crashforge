@@ -10,6 +10,8 @@ This repo is the stripped-down leaderboard pipeline rather than the full experim
 - refresh a unified result index
 - compute pass-rate snapshots for `group1-150`
 
+The repo is intentionally light on framework code. Most files are plain Python entrypoints that can be run directly.
+
 ## What is included
 
 - `scripts/codex_rescue_runner.py`: single-task rescue runner
@@ -24,6 +26,13 @@ This repo is the stripped-down leaderboard pipeline rather than the full experim
 - `docs/RESULTS_2026-07-26.md`: current experiment snapshot
 
 Public branding uses `CrashForge`. Internal script names still contain `rescue` because that is the historical implementation vocabulary and changing it would create unnecessary churn.
+
+## Repo layout
+
+- `scripts/`: queue builders, launchers, indexers, and monitoring helpers
+- `scripts/server_data/`: Docker image backfill helpers
+- `splits/`: public task lists used for reproducible snapshots
+- `docs/`: method notes and dated public result snapshots
 
 ## Environment
 
@@ -115,9 +124,11 @@ Current public snapshot is in [docs/RESULTS_2026-07-26.md](docs/RESULTS_2026-07-
 
 Headline numbers for `group1-150` as of July 26, 2026:
 
-- latest success: `112 / 150` = `74.7%`
-- easy: `83 / 91` = `91.2%`
+- latest success: `115 / 150` = `76.7%`
+- easy: `86 / 91` = `94.5%`
 - hard: `29 / 59` = `49.2%`
+
+These numbers are a dated snapshot, not a live dashboard. Recompute from your local trajectory index before citing them externally.
 
 ## Recompute the snapshot
 
@@ -139,3 +150,5 @@ The immediate target for contributors is to push the hard bucket higher without 
 - a small number of non-differential or no-submission tails
 
 The harness already preserves failure history in manifests, so contributors can continue from prior attempts rather than restarting blind.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for repo hygiene and contribution conventions.

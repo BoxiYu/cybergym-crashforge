@@ -119,7 +119,7 @@ def count_active_runners(ps_output: str) -> int:
     runner_parent_count = sum(1 for line in ps_output.splitlines() if is_active_runner_parent_command(line))
     codex_task_dirs: set[str] = set()
     for line in ps_output.splitlines():
-        if CODEX_TASK_MARKER not in line or "codex_rescue_runs_local/" not in line:
+        if CODEX_TASK_MARKER not in line:
             continue
         match = CODEX_TASK_PATTERN.search(line)
         if match is None:

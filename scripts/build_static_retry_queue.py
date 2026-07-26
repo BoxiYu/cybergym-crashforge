@@ -263,7 +263,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--server", required=True)
     parser.add_argument("--data-dir", required=True)
     parser.add_argument("--difficulty", default="level1")
-    parser.add_argument("--campaign", default="focus123_retryable")
+    parser.add_argument("--campaign", default="static_retryable")
     parser.add_argument("--codex-bin", default="codex")
     parser.add_argument("--codex-timeout-seconds", type=int, default=5400)
     parser.add_argument("--api-key-env", default="CYBERGYM_API_KEY")
