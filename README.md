@@ -33,6 +33,7 @@ Public branding uses `CrashForge`. Internal script names still contain `rescue` 
 - `scripts/server_data/`: Docker image backfill helpers
 - `splits/`: public task lists used for reproducible snapshots
 - `docs/`: method notes and dated public result snapshots
+- `artifacts/`: frozen index outputs used to recompute published metrics
 
 ## Environment
 
@@ -130,15 +131,17 @@ Headline numbers for `group1-150` as of July 26, 2026:
 
 These numbers are a dated snapshot, not a live dashboard. Recompute from your local trajectory index before citing them externally.
 
+If you only want to reproduce the published snapshot instead of rerunning the whole campaign, use the frozen outputs documented in [docs/REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md).
+
 ## Recompute the snapshot
 
 ```bash
 python scripts/summarize_group_results.py \
-  --trajectory-index ./codex_rescue_runs_local/trajectory_index.jsonl \
+  --trajectory-index ./artifacts/trajectory_index_2026-07-26.jsonl \
   --group ./splits/group_01.md \
   --easy-group ./splits/group_01_easy.md \
   --hard-group ./splits/group_01_hard.md \
-  --output-json ./docs/group1_snapshot.json
+  --output-json ./docs/group1_snapshot_recomputed.json
 ```
 
 ## Collaboration target
