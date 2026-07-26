@@ -39,6 +39,8 @@ While `download_missing_images.py` works through image pulls, the refresh loop k
 
 ## Practical reading of the metrics
 
+Publicly, we refer to this stack as `CrashForge`. Internally, many script names still use `rescue`; that is an implementation detail rather than the product name.
+
 When this harness improves the board, it usually shows up in this order:
 
 1. attempted coverage rises toward 100%

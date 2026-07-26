@@ -1,11 +1,11 @@
-# CyberGym Rescue Pipeline
+# CyberGym CrashForge
 
-Standalone harness for running large CyberGym rescue waves, keeping failure memory across retries, auto-scheduling runnable tasks, backfilling missing Docker images, and indexing results into one trajectory view.
+Standalone harness for running large CyberGym crash-generation campaigns, keeping failure memory across retries, auto-scheduling runnable tasks, backfilling missing Docker images, and indexing results into one trajectory view.
 
 This repo is the stripped-down leaderboard pipeline rather than the full experiment monorepo. The intent is simple:
 
 - generate retry queues from prior runs
-- launch a high-concurrency rescue wave
+- launch a high-concurrency campaign wave
 - keep missing-image tasks moving
 - refresh a unified result index
 - compute pass-rate snapshots for `group1-150`
@@ -22,6 +22,8 @@ This repo is the stripped-down leaderboard pipeline rather than the full experim
 - `splits/group_01*.md`: the current `group1-150`, `easy`, and `hard` task lists
 - `docs/METHOD.md`: the retry-memory and scheduling strategy
 - `docs/RESULTS_2026-07-26.md`: current experiment snapshot
+
+Public branding uses `CrashForge`. Internal script names still contain `rescue` because that is the historical implementation vocabulary and changing it would create unnecessary churn.
 
 ## Environment
 
