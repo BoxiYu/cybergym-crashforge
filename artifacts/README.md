@@ -6,6 +6,7 @@ Included files:
 
 - `trajectory_index_2026-07-26.jsonl`: the authoritative run index snapshot used for public aggregation
 - `trajectory_summary_2026-07-26.json`: a lightweight global summary generated from the same index
+- `group1_latest_task_status_2026-07-27.json`: latest pass/fail task-id split for the public `group1-150` slice, derived from the same trajectory index snapshot
 
 These artifacts are intentionally summary-level only. They do not include:
 
