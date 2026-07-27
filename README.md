@@ -2,6 +2,8 @@
 
 Standalone harness for running large CyberGym crash-generation campaigns, keeping failure memory across retries, auto-scheduling runnable tasks, backfilling missing Docker images, and indexing results into one trajectory view.
 
+Recommended runtime mode for public reproduction is now binary-only server mode.
+
 This repo is the stripped-down leaderboard pipeline rather than the full experiment monorepo. The intent is simple:
 
 - generate retry queues from prior runs
@@ -19,6 +21,7 @@ The repo is intentionally light on framework code. Most files are plain Python e
 - `scripts/rescue_queue_launcher.py`: bounded concurrent launcher for a queue
 - `scripts/refresh_missing_image_runnable_queue.py`: partition missing-image tasks and launch runnable ones automatically
 - `scripts/server_data/download_missing_images.py`: parallel Docker image pull worker
+- `scripts/server_data/download_binary_only_runners.py`: pull the small runner-image set needed for binary-only validation
 - `scripts/refresh_rescue_trajectory_index.py`: rebuild the run index
 - `scripts/summarize_group_results.py`: compute pass-rate snapshots from the trajectory index
 - `splits/group_01*.md`: the current `group1-150`, `easy`, and `hard` task lists
@@ -54,7 +57,23 @@ You also need:
 - a CyberGym data directory with task assets
 - a PoC sqlite DB used by the local server
 
+## Recommended Mode
+
+For leaderboard-style campaigns, prefer binary-only server mode over full task-image mode.
+
+See [docs/BINARY_ONLY.md](docs/BINARY_ONLY.md).
+
+Minimal preparation:
+
+```bash
+python scripts/server_data/download_binary_only_runners.py
+```
+
+Then start the CyberGym server with `--binary_dir ./cybergym-server-data`.
+
 ## Core workflow
+
+This is the recommended binary-only workflow.
 
 1. Refresh the trajectory index.
 
@@ -94,7 +113,27 @@ python scripts/rescue_queue_launcher.py \
   --scheduler-log /tmp/rescue_wave/scheduler.log
 ```
 
-4. If image holes are blocking progress, keep a runnable queue refreshed while pulls happen in parallel.
+4. Refresh the index and recompute the snapshot.
+
+```bash
+python scripts/refresh_rescue_trajectory_index.py \
+  --results-root ./codex_rescue_runs_local \
+  --output-jsonl ./codex_rescue_runs_local/trajectory_index.jsonl \
+  --summary-json ./codex_rescue_runs_local/trajectory_summary.json
+```
+
+```bash
+python scripts/summarize_group_results.py \
+  --trajectory-index ./codex_rescue_runs_local/trajectory_index.jsonl \
+  --group ./splits/group_01.md \
+  --easy-group ./splits/group_01_easy.md \
+  --hard-group ./splits/group_01_hard.md \
+  --output-json ./docs/group1_snapshot_recomputed.json
+```
+
+## Image-mode only workflow
+
+If you are running full task-image mode instead of binary-only, image holes can block progress. In that case, keep a runnable queue refreshed while pulls happen in parallel.
 
 ```bash
 python scripts/server_data/download_missing_images.py \
@@ -135,7 +174,7 @@ These numbers are a dated snapshot, not a live dashboard. Recompute from your lo
 If you only want to reproduce the published snapshot instead of rerunning the whole campaign, use the frozen outputs documented in [docs/REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md).
 If you want to rerun the public workflow, start from [docs/RERUN.md](docs/RERUN.md).
 
-## Recompute the snapshot
+## Recompute the published snapshot
 
 ```bash
 python scripts/summarize_group_results.py \

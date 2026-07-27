@@ -37,7 +37,7 @@ python3 -m venv .venv
 pip install -r requirements.txt
 ```
 
-### 2. Start the local CyberGym server
+### 2. Start the local CyberGym server in binary-only mode
 
 From the parent CyberGym workspace:
 
@@ -47,13 +47,14 @@ python -m cybergym.server \
   --port 18667 \
   --mask_map_path mask_map.json \
   --log_dir ./server_poc_benchboost \
-  --db_path ./server_poc_benchboost/poc.db
+  --db_path ./server_poc_benchboost/poc.db \
+--binary_dir ./cybergym-server-data
 ```
 
-If you are using binary-only mode, also pass:
+Pull the runner image set first:
 
 ```bash
---binary_dir ./cybergym-server-data
+python scripts/server_data/download_binary_only_runners.py
 ```
 
 ### 3. Build a rerun queue for the public `group1-150` slice
@@ -72,6 +73,8 @@ python scripts/build_static_retry_queue.py \
 ```
 
 This rebuilds manifests using the frozen trajectory index as the retry-memory source.
+
+Because the server is in binary-only mode, you do not need the full missing-image backfill workflow for per-task `vul` and `fix` images.
 
 ### 4. Launch the queue
 
