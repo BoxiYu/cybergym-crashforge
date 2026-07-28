@@ -41,7 +41,8 @@ The repo is intentionally light on framework code. Most files are plain Python e
 - `splits/group_*.md`: public split-group task lists used by the campaign helpers
 - `docs/METHOD.md`: the retry-memory and scheduling strategy
 - `docs/LEADERBOARD_WORKFLOW.md`: current leaderboard workflow, PoC storage, and manual verification flow
-- `docs/RESULTS_2026-07-26.md`: current experiment snapshot
+- `docs/RESULTS_2026-07-28.md`: latest full-benchmark experiment snapshot
+- `docs/RESULTS_2026-07-26.md`: older `group1-150` snapshot
 
 Public branding uses `CrashForge`. Internal script names still contain `rescue` because that is the historical implementation vocabulary and changing it would create unnecessary churn.
 
@@ -194,15 +195,21 @@ python scripts/refresh_missing_image_runnable_queue.py \
 
 ## Current results
 
-Current public snapshot is in [docs/RESULTS_2026-07-26.md](docs/RESULTS_2026-07-26.md).
+Latest public full-benchmark snapshot is in
+[docs/RESULTS_2026-07-28.md](docs/RESULTS_2026-07-28.md).
 
-Headline numbers for `group1-150` as of July 26, 2026:
+Headline numbers as of July 27, 2026:
 
-- latest success: `115 / 150` = `76.7%`
-- easy: `86 / 91` = `94.5%`
-- hard: `29 / 59` = `49.2%`
+- full benchmark success: `1455 / 1507` = `96.5%`
+- attempted coverage: `1498 / 1507` = `99.4%`
+- remaining tasks: `52`
+- unattempted tasks: `9`
 
-These numbers are a dated snapshot, not a live dashboard. Recompute from your local trajectory index before citing them externally.
+The earlier `group1-150` public snapshot is still preserved in
+[docs/RESULTS_2026-07-26.md](docs/RESULTS_2026-07-26.md).
+
+These numbers are dated snapshots, not a live dashboard. Recompute from your
+local trajectory index and campaign artifacts before citing them externally.
 
 If you only want to reproduce the published snapshot instead of rerunning the whole campaign, use the frozen outputs documented in [docs/REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md).
 If you want to rerun the public workflow, start from [docs/RERUN.md](docs/RERUN.md).

@@ -1,0 +1,119 @@
+{
+  "snapshot_date": "2026-07-27",
+  "generated_at": "2026-07-27T23:40:19.971700+00:00",
+  "benchmark": {
+    "attempted_rate": 0.9940278699402787,
+    "attempted_tasks": 1498,
+    "primary_groups": [
+      "group_01.md",
+      "group_02.md",
+      "group_03.md",
+      "group_04.md",
+      "group_05.md",
+      "group_06.md",
+      "group_07.md",
+      "group_08.md",
+      "group_09.md",
+      "group_10.md"
+    ],
+    "remaining_tasks": 52,
+    "success_rate_all": 0.9654943596549436,
+    "success_tasks": 1455,
+    "total_tasks": 1507,
+    "unattempted_tasks": 9,
+    "unsolved_tasks": 52
+  },
+  "frontier_priority": [
+    "group_04.md",
+    "group_09.md",
+    "group_10.md",
+    "group_08.md",
+    "group_01.md",
+    "group_05.md",
+    "group_03.md",
+    "group_06.md",
+    "group_07.md"
+  ],
+  "group_summary": [
+    {
+      "group_file": "group_01.md",
+      "total": 150,
+      "attempted_count": 150,
+      "success_count": 150,
+      "remaining_count": 0,
+      "success_rate_all": 1.0
+    },
+    {
+      "group_file": "group_02.md",
+      "total": 150,
+      "attempted_count": 148,
+      "success_count": 147,
+      "remaining_count": 3,
+      "success_rate_all": 0.98
+    },
+    {
+      "group_file": "group_03.md",
+      "total": 150,
+      "attempted_count": 150,
+      "success_count": 147,
+      "remaining_count": 3,
+      "success_rate_all": 0.98
+    },
+    {
+      "group_file": "group_04.md",
+      "total": 150,
+      "attempted_count": 149,
+      "success_count": 149,
+      "remaining_count": 1,
+      "success_rate_all": 0.9933333333333333
+    },
+    {
+      "group_file": "group_05.md",
+      "total": 150,
+      "attempted_count": 150,
+      "success_count": 148,
+      "remaining_count": 2,
+      "success_rate_all": 0.9866666666666667
+    },
+    {
+      "group_file": "group_06.md",
+      "total": 150,
+      "attempted_count": 150,
+      "success_count": 146,
+      "remaining_count": 4,
+      "success_rate_all": 0.9733333333333334
+    },
+    {
+      "group_file": "group_07.md",
+      "total": 150,
+      "attempted_count": 150,
+      "success_count": 145,
+      "remaining_count": 5,
+      "success_rate_all": 0.9666666666666667
+    },
+    {
+      "group_file": "group_08.md",
+      "total": 150,
+      "attempted_count": 150,
+      "success_count": 144,
+      "remaining_count": 6,
+      "success_rate_all": 0.96
+    },
+    {
+      "group_file": "group_09.md",
+      "total": 150,
+      "attempted_count": 149,
+      "success_count": 143,
+      "remaining_count": 7,
+      "success_rate_all": 0.9533333333333334
+    },
+    {
+      "group_file": "group_10.md",
+      "total": 157,
+      "attempted_count": 152,
+      "success_count": 136,
+      "remaining_count": 21,
+      "success_rate_all": 0.8662420382165605
+    }
+  ]
+}

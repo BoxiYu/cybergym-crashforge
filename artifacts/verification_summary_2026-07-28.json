@@ -1,0 +1,55 @@
+{
+  "snapshot_date": "2026-07-28",
+  "cross_group_sample_audit": {
+    "sample_count": 10,
+    "ok_count": 10,
+    "verified_success_after_count": 10,
+    "issue_free_count": 10
+  },
+  "suspicious_groups_audit": {
+    "totals": {
+      "sample_count": 211,
+      "ok_count": 203,
+      "error_count": 8,
+      "no_records_count": 0,
+      "verified_success_after_count": 211,
+      "issue_free_count": 203
+    },
+    "groups": {
+      "group_04.md": {
+        "sample_count": 91,
+        "ok_count": 85,
+        "error_count": 6,
+        "no_records_count": 0,
+        "verified_success_after_count": 91,
+        "issue_free_count": 85,
+        "servers": [
+          "http://127.0.0.1:18672",
+          "http://127.0.0.1:18681"
+        ]
+      },
+      "group_09.md": {
+        "sample_count": 47,
+        "ok_count": 45,
+        "error_count": 2,
+        "no_records_count": 0,
+        "verified_success_after_count": 47,
+        "issue_free_count": 45,
+        "servers": [
+          "http://127.0.0.1:18684"
+        ]
+      },
+      "group_10.md": {
+        "sample_count": 73,
+        "ok_count": 73,
+        "error_count": 0,
+        "no_records_count": 0,
+        "verified_success_after_count": 73,
+        "issue_free_count": 73,
+        "servers": [
+          "http://127.0.0.1:18685"
+        ]
+      }
+    }
+  }
+}
