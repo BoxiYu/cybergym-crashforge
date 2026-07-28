@@ -32,3 +32,18 @@ For the July 26, 2026 snapshot, the recomputed headline numbers should be:
 ## What is not included
 
 This repo does not publish raw evaluation payloads such as PoC binaries, local sqlite databases, or full run directories. Those are much heavier and are not required to recompute the public aggregate metrics.
+
+## Newer full-benchmark snapshot
+
+This repo now also includes summary-level artifacts for the later full-benchmark
+campaign:
+
+- `artifacts/benchmark_snapshot_2026-07-27.json`
+- `artifacts/verification_summary_2026-07-28.json`
+- `docs/RESULTS_2026-07-28.md`
+
+Those artifacts are intended to document the later public result snapshot and
+its verification summary. They are not a full replacement for the frozen
+`group1-150` trajectory index artifact above, because the repo still does not
+ship the raw server-side PoC store or the full private run corpus used by the
+local campaign.

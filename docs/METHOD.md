@@ -47,3 +47,20 @@ When this harness improves the board, it usually shows up in this order:
 2. easy bucket saturates
 3. hard bucket becomes dominated by `no_vul_crash`
 4. future gains depend on better local reasoning over the hard tails, not on more random retries
+
+## What changed in the July 27, 2026 leaderboard push
+
+The public harness now also includes the split-wave layer used in the later
+campaign:
+
+- repo-aware task routing via `project_routing.py`
+- fresh-wave and retry-wave preparation helpers
+- binary-only wave launch scripts
+- coverage/dashboard/campaign exporters
+- stubborn-failure task-source generation
+
+That workflow does not replace the core rescue queue model described above. It
+adds a campaign-control layer on top of it so the same retry-memory primitives
+can be used across many benchmark groups at once.
+
+See [LEADERBOARD_WORKFLOW.md](LEADERBOARD_WORKFLOW.md) for the operational view.

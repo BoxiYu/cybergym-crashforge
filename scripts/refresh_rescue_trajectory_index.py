@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import time
@@ -29,6 +30,27 @@ ARTIFACT_RELATIVE_PATHS = {
     "verify_output": "verify_output.txt",
     "task_dir": "task",
 }
+RUN_ROOT_MARKER_FILES = {"result.json", "codex_events.jsonl", "prompt.txt", "codex_last_message.md", "verify_output.txt"}
+RUN_ROOT_PRUNE_DIR_NAMES = {
+    ".auto_submit_materialized",
+    ".git",
+    "__pycache__",
+    "dist",
+    "extracted",
+    "node_modules",
+    "out",
+    "repo",
+    "repo-fix",
+    "repo-vul",
+    "retained_task_files",
+    "src",
+    "src-fix",
+    "src-vul",
+    "target",
+    "task",
+    "unpacked",
+}
+RUN_ROOT_PRUNE_PREFIXES = ("afl_", "fixed-", "fresh-", "repo_", "repo-")
 
 
 def now_utc() -> datetime:
@@ -126,9 +148,14 @@ def collect_active_run_roots() -> set[Path]:
 
 def collect_run_roots(results_root: Path) -> list[Path]:
     roots: set[Path] = set()
-    for pattern in ("result.json", "codex_events.jsonl", "prompt.txt", "codex_last_message.md", "verify_output.txt"):
-        for path in results_root.rglob(pattern):
-            roots.add(path.parent)
+    for dirpath, dirnames, filenames in os.walk(results_root, topdown=True, onerror=lambda _exc: None):
+        dirnames[:] = [
+            name
+            for name in dirnames
+            if name not in RUN_ROOT_PRUNE_DIR_NAMES and not any(name.startswith(prefix) for prefix in RUN_ROOT_PRUNE_PREFIXES)
+        ]
+        if RUN_ROOT_MARKER_FILES.intersection(filenames):
+            roots.add(Path(dirpath))
     return sorted(roots)
 
 

@@ -50,6 +50,8 @@ Recommended in binary-only mode:
 2. launch queue
 3. refresh trajectory index
 4. summarize results
+5. for leaderboard campaigns, prefer the split-wave helpers and campaign exporters in
+   [LEADERBOARD_WORKFLOW.md](LEADERBOARD_WORKFLOW.md)
 
 Usually unnecessary in binary-only mode:
 
@@ -67,3 +69,16 @@ For each task family, CrashForge expects:
 - `oss-fuzz/<id>/vul` and `oss-fuzz/<id>/fix` directories with `metadata.json` and `out/`
 
 It may still require one or more base runner images, but not the task-specific runtime images.
+
+## Verification artifacts
+
+In binary-only leaderboard mode, the authoritative verification artifacts live in
+the server `log_dir`:
+
+- `poc.db`
+- bucketed `poc_id` directories containing `poc.bin`
+- `output.vul`
+- `output.fix`
+
+Manual re-verification uses those saved artifacts rather than reconstructing the
+candidate from a run directory. See [LEADERBOARD_WORKFLOW.md](LEADERBOARD_WORKFLOW.md).

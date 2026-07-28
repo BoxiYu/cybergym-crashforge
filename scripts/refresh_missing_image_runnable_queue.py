@@ -353,10 +353,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--server", required=True)
     parser.add_argument("--data-dir", required=True)
     parser.add_argument("--pocdb-path", required=True)
-    parser.add_argument("--scheduler-log", default="codex_rescue_runs_local/missing_image_queue.log")
+    parser.add_argument("--scheduler-log", default="codex_rescue_runs_local/wave9_missing_image_queue.log")
     parser.add_argument("--poll-seconds", type=int, default=120)
     parser.add_argument("--max-active-runners", type=int, default=16)
-    parser.add_argument("--log-path", default="codex_rescue_runs_local/missing_image_refresh.log")
+    parser.add_argument("--log-path", default="codex_rescue_runs_local/wave9_missing_image_refresh.log")
     parser.add_argument("--python-bin", default=sys.executable)
     parser.add_argument("--dedupe-task-id", action="store_true")
     parser.add_argument(

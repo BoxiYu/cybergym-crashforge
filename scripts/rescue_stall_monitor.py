@@ -42,6 +42,15 @@ DEFAULT_POST_SUBMIT_IDLE_NO_VUL_RUNTIME_SECONDS = 2400
 DEFAULT_POST_SUBMIT_IDLE_NO_VUL_COMPLETED_ITEMS = 200
 DEFAULT_POST_SUBMIT_IDLE_MIN_NO_VUL_SUBMISSIONS = 1
 DEFAULT_POST_SUBMIT_IDLE_NO_VUL_SECONDS = 1800
+# In the current group2 hard binary wave, every run that reached three or more
+# non_differential verdicts ended up exhausted, while the verified_success
+# sample only ever showed at most one non_differential before succeeding.
+# Reclaim these runs sooner so they stop holding scarce runner slots.
+DEFAULT_POST_SUBMIT_NON_DIFF_RUNTIME_SECONDS = 300
+DEFAULT_POST_SUBMIT_NON_DIFF_COMPLETED_ITEMS = 50
+DEFAULT_POST_SUBMIT_MIN_CURRENT_SUBMISSIONS = 4
+DEFAULT_POST_SUBMIT_MIN_NON_DIFF_SUBMISSIONS = 3
+DEFAULT_POST_SUBMIT_NON_DIFF_IDLE_SECONDS = 60
 DEFAULT_POST_SUBMIT_CUMULATIVE_NO_VUL_RUNTIME_SECONDS = 900
 # Historical verified_success tasks in this workspace topped out at seven
 # cumulative no_vul records. Once a task has already exhausted eight or more
@@ -420,6 +429,37 @@ def should_abort_for_post_submit_stale_no_progress_stall(
     return record_age_seconds is not None and record_age_seconds >= min_record_idle_seconds
 
 
+def should_abort_for_post_submit_repeated_non_differential_stall(
+    *,
+    elapsed_seconds: int,
+    metrics: dict[str, int],
+    records: list[dict[str, Any]],
+    min_runtime_seconds: int,
+    min_completed_items: int,
+    min_current_submissions: int,
+    min_non_differential_submissions: int,
+    min_record_idle_seconds: int,
+    now_dt: datetime | None = None,
+) -> bool:
+    observed_submissions = max(metrics["submit_completed"], len(records))
+    if observed_submissions < min_current_submissions:
+        return False
+    if elapsed_seconds < min_runtime_seconds or metrics["completed_items"] < min_completed_items:
+        return False
+    if len(records) < min_current_submissions:
+        return False
+    verdicts = [record.get("verdict") for record in records]
+    if any(verdict == "verified_success" for verdict in verdicts):
+        return False
+    non_differential_count = sum(1 for verdict in verdicts if verdict == "non_differential")
+    if non_differential_count < min_non_differential_submissions:
+        return False
+    if not all(verdict in IDLE_NON_PROGRESS_VERDICTS for verdict in verdicts):
+        return False
+    record_age_seconds = latest_record_age_seconds(records, now_dt=now_dt)
+    return record_age_seconds is not None and record_age_seconds >= min_record_idle_seconds
+
+
 def load_task_record_summary(task_id: str, pocdb_path: Path) -> dict[str, Any]:
     with sqlite3.connect(pocdb_path) as conn:
         conn.row_factory = sqlite3.Row
@@ -427,8 +467,14 @@ def load_task_record_summary(task_id: str, pocdb_path: Path) -> dict[str, Any]:
             """
             select
                 count(*) as total_records,
-                sum(case when vul_exit_code = 0 and fix_exit_code is null then 1 else 0 end) as total_no_vul_records,
-                sum(case when vul_exit_code != 0 and fix_exit_code = 0 then 1 else 0 end) as total_verified_success_records,
+                sum(case when vul_exit_code in (0, 300) and fix_exit_code is null then 1 else 0 end) as total_no_vul_records,
+                sum(
+                    case
+                        when vul_exit_code is not null and vul_exit_code not in (0, 300) and fix_exit_code = 0
+                        then 1
+                        else 0
+                    end
+                ) as total_verified_success_records,
                 max(updated_at) as last_updated
             from poc_records
             where task_id = ?
@@ -674,7 +720,6 @@ def terminate_pids(pids: tuple[int, ...] | list[int], *, dry_run: bool):
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Monitor active rescue codex exec runs and abort long pre-submit stalls.")
     parser.add_argument("--workspace-root", default=".")
-    parser.add_argument("--results-root", default="codex_rescue_runs_local")
     parser.add_argument("--poll-seconds", type=int, default=30)
     parser.add_argument("--min-runtime-seconds", type=int, default=600)
     parser.add_argument("--min-completed-items", type=int, default=120)
@@ -708,6 +753,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--post-submit-idle-no-vul-completed-items", type=int, default=DEFAULT_POST_SUBMIT_IDLE_NO_VUL_COMPLETED_ITEMS)
     parser.add_argument("--post-submit-idle-min-no-vul-submissions", type=int, default=DEFAULT_POST_SUBMIT_IDLE_MIN_NO_VUL_SUBMISSIONS)
     parser.add_argument("--post-submit-idle-no-vul-seconds", type=int, default=DEFAULT_POST_SUBMIT_IDLE_NO_VUL_SECONDS)
+    parser.add_argument("--post-submit-non-diff-runtime-seconds", type=int, default=DEFAULT_POST_SUBMIT_NON_DIFF_RUNTIME_SECONDS)
+    parser.add_argument("--post-submit-non-diff-completed-items", type=int, default=DEFAULT_POST_SUBMIT_NON_DIFF_COMPLETED_ITEMS)
+    parser.add_argument("--post-submit-min-current-submissions", type=int, default=DEFAULT_POST_SUBMIT_MIN_CURRENT_SUBMISSIONS)
+    parser.add_argument("--post-submit-min-non-diff-submissions", type=int, default=DEFAULT_POST_SUBMIT_MIN_NON_DIFF_SUBMISSIONS)
+    parser.add_argument("--post-submit-non-diff-idle-seconds", type=int, default=DEFAULT_POST_SUBMIT_NON_DIFF_IDLE_SECONDS)
     parser.add_argument(
         "--post-submit-cumulative-no-vul-runtime-seconds",
         type=int,
@@ -768,6 +818,11 @@ def main(argv: list[str] | None = None) -> int:
             f"post_submit_idle_no_vul_completed_items={args.post_submit_idle_no_vul_completed_items} "
             f"post_submit_idle_min_no_vul_submissions={args.post_submit_idle_min_no_vul_submissions} "
             f"post_submit_idle_no_vul_seconds={args.post_submit_idle_no_vul_seconds}s "
+            f"post_submit_non_diff_runtime={args.post_submit_non_diff_runtime_seconds}s "
+            f"post_submit_non_diff_completed_items={args.post_submit_non_diff_completed_items} "
+            f"post_submit_min_current_submissions={args.post_submit_min_current_submissions} "
+            f"post_submit_min_non_diff_submissions={args.post_submit_min_non_diff_submissions} "
+            f"post_submit_non_diff_idle_seconds={args.post_submit_non_diff_idle_seconds}s "
             f"post_submit_cumulative_no_vul_runtime={args.post_submit_cumulative_no_vul_runtime_seconds}s "
             f"post_submit_cumulative_min_current_submissions={args.post_submit_cumulative_min_current_submissions} "
             f"post_submit_cumulative_max_current_submissions={args.post_submit_cumulative_max_current_submissions} "
@@ -998,6 +1053,44 @@ def main(argv: list[str] | None = None) -> int:
                         )
                     actions += 1
                     continue
+                if should_abort_for_post_submit_repeated_non_differential_stall(
+                    elapsed_seconds=run.elapsed_seconds,
+                    metrics=metrics,
+                    records=records,
+                    min_runtime_seconds=args.post_submit_non_diff_runtime_seconds,
+                    min_completed_items=args.post_submit_non_diff_completed_items,
+                    min_current_submissions=args.post_submit_min_current_submissions,
+                    min_non_differential_submissions=args.post_submit_min_non_diff_submissions,
+                    min_record_idle_seconds=args.post_submit_non_diff_idle_seconds,
+                ):
+                    append_log(
+                        log_path,
+                        (
+                            f"aborting_post_submit_non_differential pid={run.pid} run_root={run_root} elapsed={run.elapsed_seconds}s "
+                            f"agent_id={agent_id} metrics={json.dumps(metrics, sort_keys=True)} records={len(records)} "
+                            f"record_idle_seconds={int(latest_record_age_seconds(records) or 0)}"
+                        ),
+                    )
+                    terminate_pids(run.pids or (run.pid,), dry_run=args.dry_run)
+                    try:
+                        updated = reconcile_terminated_active_run(
+                            run_root=run_root,
+                            pocdb_path=Path(args.orphan_pocdb_path),
+                            dry_run=args.dry_run,
+                            records_override=records,
+                        )
+                    except Exception as exc:  # noqa: BLE001
+                        append_log(log_path, f"post_submit_non_differential_reconcile_failed run_root={run_root} error={exc}")
+                    else:
+                        append_log(
+                            log_path,
+                            (
+                                f"post_submit_non_differential_reconciled run_root={run_root} task_id={updated['task_id']} "
+                                f"status={updated['status']} records={len(updated.get('records', []))}"
+                            ),
+                        )
+                    actions += 1
+                    continue
                 if task_summary and should_abort_for_post_submit_cumulative_no_vul_exhaustion(
                     elapsed_seconds=run.elapsed_seconds,
                     metrics=metrics,
@@ -1217,7 +1310,7 @@ def main(argv: list[str] | None = None) -> int:
                         )
                     actions += 1
         if args.orphan_pocdb_path:
-            run_search_root = (workspace_root / args.results_root).resolve()
+            run_search_root = (workspace_root / "codex_rescue_runs_local").resolve()
             for run_root in find_stale_orphan_run_roots(
                 run_search_root,
                 active_run_roots=active_run_roots,

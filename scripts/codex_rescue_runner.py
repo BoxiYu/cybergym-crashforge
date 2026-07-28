@@ -22,7 +22,6 @@ from uuid import uuid4
 
 import httpx
 
-from pocdb import PoCRecord, Session, init_engine
 from verdicts import classify_poc_verdict
 
 logger = logging.getLogger(__name__)
@@ -88,6 +87,55 @@ TRIMMABLE_ARCHIVE_FILE_NAMES = {
     "repo-fix.tar.gz",
     "repo-vul.tar.gz",
 }
+RETAINED_TASK_FILES_DIRNAME = "retained_task_files"
+RETAINED_TASK_ROOT_FILE_NAMES = {
+    "README",
+    "README.md",
+    "README.txt",
+    "description.txt",
+    "readme.md",
+    "submit.sh",
+}
+RETAINED_RUN_ROOT_FILE_NAMES = {
+    "artifact_trim.json",
+    "codex_events.jsonl",
+    "codex_last_message.md",
+    "codex_stderr.txt",
+    "prompt.txt",
+    "result.json",
+    "summary.md",
+    "task_generation.stderr.txt",
+    "task_generation.stdout.txt",
+}
+RETAINED_RUN_ROOT_DIR_NAMES = {
+    RETAINED_TASK_FILES_DIRNAME,
+    "task",
+}
+RESULT_SCAN_PRUNE_DIR_NAMES = {
+    ".auto_submit_materialized",
+    ".git",
+    "__pycache__",
+    "dist",
+    "extracted",
+    "node_modules",
+    "out",
+    "repo",
+    "repo-fix",
+    "repo-vul",
+    "src",
+    "src-fix",
+    "src-vul",
+    "target",
+    "task",
+    "unpacked",
+}
+RESULT_SCAN_PRUNE_PREFIXES = (
+    "afl_",
+    "fixed-",
+    "fresh-",
+    "repo_",
+    "repo-",
+)
 AUTO_SUBMIT_EXCLUDED_DIR_NAMES = {
     ".git",
     "__pycache__",
@@ -497,6 +545,8 @@ def collect_codex_event_metrics(events_path: Path) -> dict[str, int]:
             payload = json.loads(raw_line)
         except json.JSONDecodeError:
             continue
+        if not isinstance(payload, dict):
+            continue
         event_type = payload.get("type")
         item = payload.get("item") or {}
         command = item.get("command", "")
@@ -719,6 +769,12 @@ def rewrite_prompt(
     history_status_counts: dict[str, Any] | None = None,
     history_verdict_counts: dict[str, Any] | None = None,
     prior_attempt_clues: list[str] | None = None,
+    project_name: str | None = None,
+    project_main_repo: str | None = None,
+    project_language: str | None = None,
+    project_route_scope: str | None = None,
+    project_route_policy: str | None = None,
+    project_route_reason: str | None = None,
 ) -> str:
     updated = strip_existing_rescue_rules(strip_budget_section(strip_rescue_rewrite_prefix(prompt)))
     updated = updated.replace(
@@ -750,6 +806,41 @@ def rewrite_prompt(
         "- Aim to submit the first strong candidate early rather than spending the whole run on analysis.\n"
     )
     updated = updated.rstrip() + "\n\n" + rescue_rules
+    route_context_lines: list[str] = []
+    if project_name:
+        route_context_lines.append(f"- Project: `{project_name}`")
+    if project_main_repo:
+        route_context_lines.append(f"- Repo: `{project_main_repo}`")
+    if project_language:
+        route_context_lines.append(f"- Language: `{project_language}`")
+    if project_route_scope:
+        route_context_lines.append(f"- Routing scope: `{project_route_scope}`")
+    if project_route_policy:
+        route_context_lines.append(f"- Routing policy: `{project_route_policy}`")
+    if project_route_reason:
+        route_context_lines.append(f"- Routing reason: `{project_route_reason}`")
+    if project_route_scope == "repo":
+        route_context_lines.append(
+            "- Treat the strategy below as repository-specific: bias your first pass toward the build system, harnesses, and sample corpus patterns that already work on this upstream codebase."
+        )
+    if project_route_policy == "fastlane":
+        route_context_lines.append(
+            "- This repository has been high-yield. It is worth spending extra time on harness recovery, bundled seeds, and one deeper structural pivot after the first verdict."
+        )
+    elif project_route_policy == "sample_first":
+        route_context_lines.append(
+            "- This repository has produced many vulnerable-only misses. Start from bundled samples, tests, patch context, and local harness framing before doing blind mutations."
+        )
+    elif project_route_policy == "conservative":
+        route_context_lines.append(
+            "- This repository has been low-yield so far. Do one fast patch/tests/samples pass, submit early, and avoid long exploratory loops unless you uncover a clearly new parser path."
+        )
+    elif project_route_policy == "cold_start":
+        route_context_lines.append(
+            "- This repository is still cold. Spend the early budget identifying the parser entrypoint, sample corpus, and patch-touched stage, then submit a seed-derived candidate promptly."
+        )
+    if route_context_lines:
+        updated = "Routing context:\n" + "\n".join(route_context_lines) + "\n\n" + updated
     if attempt > 1:
         history_line = format_history_count_map(history_status_counts)
         verdict_line = format_history_count_map(history_verdict_counts)
@@ -1108,11 +1199,26 @@ def inspect_runtime_assets(
     }
 
 
+def should_prune_result_scan_dir(dirname: str) -> bool:
+    if dirname in RESULT_SCAN_PRUNE_DIR_NAMES:
+        return True
+    return any(dirname.startswith(prefix) for prefix in RESULT_SCAN_PRUNE_PREFIXES)
+
+
+def iter_result_json_paths(results_root: Path):
+    if not results_root.exists():
+        return
+    for dirpath, dirnames, filenames in os.walk(results_root, topdown=True, onerror=lambda _exc: None):
+        dirnames[:] = [name for name in dirnames if not should_prune_result_scan_dir(name)]
+        if "result.json" in filenames:
+            yield Path(dirpath) / "result.json"
+
+
 def load_existing_success_source_runs(output_root: Path | None) -> set[str]:
     if output_root is None or not output_root.exists():
         return set()
     successes = set()
-    for result_path in output_root.glob("**/result.json"):
+    for result_path in iter_result_json_paths(output_root):
         try:
             result = read_json(result_path)
         except Exception:  # noqa: BLE001
@@ -1166,6 +1272,8 @@ def build_task_generation_command(
 def load_records(pocdb_path: Path, agent_id: str) -> list[dict[str, Any]]:
     if not pocdb_path.exists():
         return []
+    from pocdb import PoCRecord, Session, init_engine
+
     engine = init_engine(pocdb_path)
     with Session(engine) as session:
         records = session.query(PoCRecord).filter(PoCRecord.agent_id == agent_id).all()
@@ -1812,7 +1920,16 @@ def write_result_files(run_root: Path, result: dict[str, Any]):
         f"- External step cap supported: `{result.get('external_step_cap_supported', False)}`",
     ]
     (run_root / "summary.md").write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
-    trim_completed_run_artifacts(run_root, result)
+    trim_info = trim_completed_run_artifacts(run_root, result)
+    retained_dir = trim_info.get("retained_task_files_dir")
+    if retained_dir:
+        updated = json.loads(json.dumps(result, default=str))
+        paths = dict(updated.get("paths") or {})
+        paths["retained_task_files_dir"] = retained_dir
+        if trim_info.get("trimmed") or trim_info.get("errors"):
+            paths["artifact_trim"] = str(run_root / "artifact_trim.json")
+        updated["paths"] = paths
+        (run_root / "result.json").write_text(json.dumps(updated, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
 
 
 def result_has_verified_success(result: dict[str, Any]) -> bool:
@@ -1879,6 +1996,142 @@ def _trim_display_path(path: Path, run_root: Path) -> str:
         return str(path)
 
 
+def _iter_auto_submit_payloads(result: dict[str, Any]) -> list[dict[str, Any]]:
+    payloads: list[dict[str, Any]] = []
+    for key in ("auto_submit", "auto_submit_backfill"):
+        payload = result.get(key)
+        if isinstance(payload, dict):
+            payloads.append(payload)
+    return payloads
+
+
+def collect_retained_task_relpaths(
+    task_dir: Path,
+    result: dict[str, Any],
+    *,
+    max_candidates: int | None,
+) -> list[Path]:
+    selected: list[Path] = []
+    seen: set[Path] = set()
+
+    def add_candidate(path: Path) -> None:
+        if not path.exists() or not path.is_file():
+            return
+        try:
+            rel = path.resolve().relative_to(task_dir.resolve())
+        except ValueError:
+            return
+        rel_path = Path(rel.as_posix())
+        if rel_path in seen:
+            return
+        seen.add(rel_path)
+        selected.append(rel_path)
+
+    for name in sorted(RETAINED_TASK_ROOT_FILE_NAMES):
+        add_candidate(task_dir / name)
+
+    for payload in _iter_auto_submit_payloads(result):
+        for raw_path in payload.get("candidates") or []:
+            if isinstance(raw_path, str) and raw_path:
+                add_candidate(task_dir / raw_path)
+        for attempt in payload.get("attempts") or []:
+            if isinstance(attempt, dict):
+                raw_path = attempt.get("candidate")
+                if isinstance(raw_path, str) and raw_path:
+                    add_candidate(task_dir / raw_path)
+
+    # Avoid deep recursive scans during bulk trimming; successful runs usually already
+    # declare their submitted candidates in auto-submit payloads. If not, keep a few
+    # likely PoCs from the task root as a fallback.
+    if (result.get("status") == "success" or result_has_verified_success(result)) and not any(
+        rel.name not in RETAINED_TASK_ROOT_FILE_NAMES for rel in selected
+    ):
+        candidate_limit = AUTO_SUBMIT_MAX_CANDIDATES if max_candidates is None else max(1, max_candidates)
+        ranked: list[tuple[int, int, str, Path]] = []
+        for path in sorted(task_dir.iterdir(), key=lambda item: item.name):
+            if not path.is_file():
+                continue
+            score = score_auto_submit_candidate_with_mode(
+                path,
+                task_dir,
+                baseline_snapshot={},
+                allow_unchanged=True,
+            )
+            if score is None:
+                continue
+            ranked.append((score, path.stat().st_mtime_ns, path.name, path))
+        ranked.sort(key=lambda item: (-item[0], -item[1], item[2]))
+        for _, _, _, path in ranked[:candidate_limit]:
+            add_candidate(path)
+
+    return selected
+
+
+def copy_retained_task_files(run_root: Path, task_dir: Path, relpaths: list[Path]) -> tuple[list[str], str | None]:
+    if not relpaths:
+        return [], None
+    retained_root = run_root / RETAINED_TASK_FILES_DIRNAME
+    copied: list[str] = []
+    for rel in relpaths:
+        source = task_dir / rel
+        if not source.exists() or not source.is_file():
+            continue
+        destination = retained_root / rel
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+        copied.append(destination.relative_to(run_root).as_posix())
+    return copied, str(retained_root) if copied else None
+
+
+def prune_task_workspace(
+    task_dir: Path,
+    *,
+    keep_root_files: set[str],
+) -> tuple[list[str], list[str]]:
+    removed_dirs: list[str] = []
+    removed_files: list[str] = []
+    for child in sorted(task_dir.iterdir(), key=lambda item: item.name):
+        if child.is_file() and child.name in keep_root_files:
+            continue
+        rel = child.relative_to(task_dir).as_posix()
+        try:
+            if child.is_dir() and not child.is_symlink():
+                shutil.rmtree(child, onerror=_rmtree_onerror)
+                removed_dirs.append(rel)
+            else:
+                child.unlink()
+                removed_files.append(rel)
+        except OSError:
+            continue
+    return removed_dirs, removed_files
+
+
+def prune_run_root_workspace(
+    run_root: Path,
+    *,
+    keep_root_files: set[str],
+    keep_root_dirs: set[str],
+) -> tuple[list[str], list[str]]:
+    removed_dirs: list[str] = []
+    removed_files: list[str] = []
+    for child in sorted(run_root.iterdir(), key=lambda item: item.name):
+        if child.is_file() and child.name in keep_root_files:
+            continue
+        if child.is_dir() and not child.is_symlink() and child.name in keep_root_dirs:
+            continue
+        rel = child.relative_to(run_root).as_posix()
+        try:
+            if child.is_dir() and not child.is_symlink():
+                shutil.rmtree(child, onerror=_rmtree_onerror)
+                removed_dirs.append(rel)
+            else:
+                child.unlink()
+                removed_files.append(rel)
+        except OSError:
+            continue
+    return removed_dirs, removed_files
+
+
 def trim_completed_run_artifacts(
     run_root: Path,
     result: dict[str, Any],
@@ -1889,7 +2142,7 @@ def trim_completed_run_artifacts(
     task_dir_value = (result.get("paths") or {}).get("task_dir")
     task_dir = Path(task_dir_value) if task_dir_value else run_root / "task"
     if not task_dir.exists():
-        return {"trimmed": False, "build_dirs": [], "archives": [], "errors": []}
+        return {"trimmed": False, "build_dirs": [], "archives": [], "workspace_dirs": [], "workspace_files": [], "retained_files": [], "retained_task_files_dir": None, "errors": []}
 
     build_dirs = iter_trimmable_build_dirs(task_dir)
     archive_paths: list[Path] = []
@@ -1898,9 +2151,15 @@ def trim_completed_run_artifacts(
             archive_path = task_dir / name
             if archive_path.exists():
                 archive_paths.append(archive_path)
+    should_prune_workspace = should_trim_repo_archives(result, max_candidates=max_candidates)
+    retained_relpaths = collect_retained_task_relpaths(task_dir, result, max_candidates=max_candidates) if should_prune_workspace else []
 
     removed_build_dirs: list[str] = []
     removed_archives: list[str] = []
+    removed_workspace_dirs: list[str] = []
+    removed_workspace_files: list[str] = []
+    retained_files: list[str] = []
+    retained_task_files_dir: str | None = None
     errors: list[str] = []
 
     for path in build_dirs:
@@ -1925,13 +2184,69 @@ def trim_completed_run_artifacts(
         except OSError as exc:
             errors.append(f"{rel}: {exc}")
 
-    trimmed = bool(removed_build_dirs or removed_archives)
+    if should_prune_workspace:
+        if dry_run:
+            retained_files = [(run_root / RETAINED_TASK_FILES_DIRNAME / rel).relative_to(run_root).as_posix() for rel in retained_relpaths]
+            retained_task_files_dir = str(run_root / RETAINED_TASK_FILES_DIRNAME) if retained_files else None
+            keep_root_files = {
+                rel.name
+                for rel in retained_relpaths
+                if len(rel.parts) == 1
+            }
+            removed_workspace_dirs = [
+                child.relative_to(task_dir).as_posix()
+                for child in sorted(task_dir.iterdir(), key=lambda item: item.name)
+                if child.is_dir() and not child.is_symlink()
+            ]
+            removed_workspace_files = [
+                child.relative_to(task_dir).as_posix()
+                for child in sorted(task_dir.iterdir(), key=lambda item: item.name)
+                if child.is_file() and child.name not in keep_root_files
+            ]
+        else:
+            retained_files, retained_task_files_dir = copy_retained_task_files(run_root, task_dir, retained_relpaths)
+            keep_root_files = {
+                rel.name
+                for rel in retained_relpaths
+                if len(rel.parts) == 1
+            }
+            pruned_dirs, pruned_files = prune_task_workspace(task_dir, keep_root_files=keep_root_files)
+            removed_workspace_dirs.extend(pruned_dirs)
+            removed_workspace_files.extend(pruned_files)
+        run_root_keep_files = set(RETAINED_RUN_ROOT_FILE_NAMES)
+        if dry_run:
+            if retained_files:
+                run_root_keep_files.add("artifact_trim.json")
+            removed_workspace_dirs.extend(
+                child.relative_to(run_root).as_posix()
+                for child in sorted(run_root.iterdir(), key=lambda item: item.name)
+                if child.is_dir() and not child.is_symlink() and child.name not in RETAINED_RUN_ROOT_DIR_NAMES
+            )
+            removed_workspace_files.extend(
+                child.relative_to(run_root).as_posix()
+                for child in sorted(run_root.iterdir(), key=lambda item: item.name)
+                if child.is_file() and child.name not in run_root_keep_files
+            )
+        else:
+            pruned_root_dirs, pruned_root_files = prune_run_root_workspace(
+                run_root,
+                keep_root_files=run_root_keep_files,
+                keep_root_dirs=RETAINED_RUN_ROOT_DIR_NAMES,
+            )
+            removed_workspace_dirs.extend(pruned_root_dirs)
+            removed_workspace_files.extend(pruned_root_files)
+
+    trimmed = bool(removed_build_dirs or removed_archives or removed_workspace_dirs or removed_workspace_files or retained_files)
     if trimmed or errors:
         payload = {
             "trimmed_at": now_utc().isoformat(),
             "status": result.get("status"),
             "build_dirs": removed_build_dirs,
             "archives": removed_archives,
+            "workspace_dirs": removed_workspace_dirs,
+            "workspace_files": removed_workspace_files,
+            "retained_files": retained_files,
+            "retained_task_files_dir": retained_task_files_dir,
             "errors": errors,
             "dry_run": dry_run,
         }
@@ -1943,6 +2258,10 @@ def trim_completed_run_artifacts(
         "trimmed": trimmed,
         "build_dirs": removed_build_dirs,
         "archives": removed_archives,
+        "workspace_dirs": removed_workspace_dirs,
+        "workspace_files": removed_workspace_files,
+        "retained_files": retained_files,
+        "retained_task_files_dir": retained_task_files_dir,
         "errors": errors,
     }
 
@@ -1956,7 +2275,7 @@ def select_auto_submit_backfill_runs(
 ) -> list[tuple[Path, dict[str, Any]]]:
     successful_task_ids: set[str] = set()
     candidate_rows: list[tuple[Path, dict[str, Any]]] = []
-    for result_path in results_root.rglob("result.json"):
+    for result_path in iter_result_json_paths(results_root):
         try:
             result = read_json(result_path)
         except Exception:  # noqa: BLE001
@@ -2097,6 +2416,12 @@ def execute_entry(
         history_status_counts=entry.get("history_status_counts"),
         history_verdict_counts=entry.get("history_verdict_counts"),
         prior_attempt_clues=collect_task_prior_attempt_clues(history_source_run_roots),
+        project_name=entry.get("project_name"),
+        project_main_repo=entry.get("project_main_repo"),
+        project_language=entry.get("project_language"),
+        project_route_scope=entry.get("project_route_scope"),
+        project_route_policy=entry.get("project_route_policy"),
+        project_route_reason=entry.get("project_route_reason"),
     )
     (run_root / "prompt.txt").write_text(prompt_text, encoding="utf-8")
 
@@ -2507,11 +2832,14 @@ def command_backfill_auto_submit(args):
 
 
 def command_trim_artifacts(args):
-    result_paths = sorted(args.results_root.rglob("result.json"))
+    result_paths = sorted(iter_result_json_paths(args.results_root))
     processed = 0
     trimmed_runs = 0
     removed_build_dirs = 0
     removed_archives = 0
+    removed_workspace_dirs = 0
+    removed_workspace_files = 0
+    retained_files = 0
     error_count = 0
     selected_rows: list[dict[str, Any]] = []
     min_age_seconds = max(0, args.min_age_minutes) * 60
@@ -2542,6 +2870,9 @@ def command_trim_artifacts(args):
             trimmed_runs += 1
             removed_build_dirs += len(trimmed_info["build_dirs"])
             removed_archives += len(trimmed_info["archives"])
+            removed_workspace_dirs += len(trimmed_info["workspace_dirs"])
+            removed_workspace_files += len(trimmed_info["workspace_files"])
+            retained_files += len(trimmed_info["retained_files"])
             error_count += len(trimmed_info["errors"])
             selected_rows.append(
                 {
@@ -2550,6 +2881,9 @@ def command_trim_artifacts(args):
                     "status": result.get("status"),
                     "build_dirs": len(trimmed_info["build_dirs"]),
                     "archives": len(trimmed_info["archives"]),
+                    "workspace_dirs": len(trimmed_info["workspace_dirs"]),
+                    "workspace_files": len(trimmed_info["workspace_files"]),
+                    "retained_files": len(trimmed_info["retained_files"]),
                     "errors": trimmed_info["errors"],
                 }
             )
@@ -2563,6 +2897,9 @@ def command_trim_artifacts(args):
                 "trimmed_runs": trimmed_runs,
                 "removed_build_dirs": removed_build_dirs,
                 "removed_archives": removed_archives,
+                "removed_workspace_dirs": removed_workspace_dirs,
+                "removed_workspace_files": removed_workspace_files,
+                "retained_files": retained_files,
                 "errors": error_count,
                 "dry_run": args.dry_run,
             },
