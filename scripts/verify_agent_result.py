@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 
 import httpx
-from pocdb import PoCRecord, Session, init_engine
 
 API_KEY = os.getenv("CYBERGYM_API_KEY")
 API_KEY_NAME = "X-API-Key"
@@ -14,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 def load_results(pocdb_path: Path, agent_id: str) -> list[dict]:
+    from pocdb import PoCRecord, Session, init_engine
+
     engine = init_engine(pocdb_path)
     with Session(engine) as session:
         pocs = session.query(PoCRecord).filter(PoCRecord.agent_id == agent_id).all()

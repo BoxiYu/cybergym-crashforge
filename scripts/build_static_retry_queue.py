@@ -7,6 +7,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from project_routing import (
+    attach_project_routing_metadata,
+    build_project_stats,
+    load_task_metadata,
+    task_priority_key,
+)
+
 DEFAULT_RETRYABLE_STATUSES = (
     "no_vul_crash",
     "fix_also_crashes",
@@ -93,6 +100,16 @@ def task_slug(task_id: str) -> str:
     return task_id.replace(":", "_")
 
 
+def selected_row_sort_key(
+    row: dict[str, Any],
+    *,
+    status_priority: tuple[str, ...] | None = None,
+) -> tuple[int, str, tuple[float, str]]:
+    priority_index = {status: index for index, status in enumerate(status_priority or ())}
+    rank = priority_index.get(str(row.get("status") or ""), len(priority_index))
+    return (rank, str(row.get("task_id") or ""), row_order_key(row))
+
+
 def collect_recent_source_run_roots(
     task_rows: list[dict[str, Any]],
     *,
@@ -177,12 +194,16 @@ def write_static_retry_queue(
     difficulty: str,
     campaign: str,
     retryable_statuses: set[str],
+    status_priority: tuple[str, ...] | None = None,
     codex_bin: str,
     codex_timeout_seconds: int,
     api_key_env: str,
+    tasks_json: Path,
 ) -> dict[str, Any]:
     rows = load_trajectory_rows(trajectory_index)
     selected_task_ids = load_task_ids(task_source)
+    metadata_by_task = load_task_metadata(tasks_json.resolve())
+    project_stats = build_project_stats(trajectory_index.resolve(), metadata_by_task=metadata_by_task)
 
     grouped: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
@@ -208,7 +229,16 @@ def write_static_retry_queue(
         selected_rows.append(latest)
         selected_task_rows[str(task_id)] = list(task_rows)
 
-    selected_rows.sort(key=lambda row: (str(row.get("task_id")), row_order_key(row)))
+    selected_rows.sort(
+        key=lambda row: (
+            *task_priority_key(
+                str(row["task_id"]),
+                metadata_by_task=metadata_by_task,
+                project_stats=project_stats,
+            ),
+            *selected_row_sort_key(row, status_priority=status_priority),
+        )
+    )
     output_manifest_dir.mkdir(parents=True, exist_ok=True)
     output_queue_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -217,17 +247,22 @@ def write_static_retry_queue(
     for index, row in enumerate(selected_rows, start=1):
         name = f"{index:0{width}d}_{task_slug(str(row['task_id']))}"
         manifest_path = output_manifest_dir / f"{name}.jsonl"
-        entry = build_retry_entry(
-            row=row,
-            task_rows=selected_task_rows[str(row["task_id"])],
-            results_root=results_root,
-            server=server,
-            data_dir=data_dir,
-            difficulty=difficulty,
-            campaign=campaign,
-            codex_bin=codex_bin,
-            codex_timeout_seconds=codex_timeout_seconds,
-            api_key_env=api_key_env,
+        entry = attach_project_routing_metadata(
+            build_retry_entry(
+                row=row,
+                task_rows=selected_task_rows[str(row["task_id"])],
+                results_root=results_root,
+                server=server,
+                data_dir=data_dir,
+                difficulty=difficulty,
+                campaign=campaign,
+                codex_bin=codex_bin,
+                codex_timeout_seconds=codex_timeout_seconds,
+                api_key_env=api_key_env,
+            ),
+            task_id=str(row["task_id"]),
+            metadata_by_task=metadata_by_task,
+            project_stats=project_stats,
         )
         manifest_path.write_text(json.dumps(entry, sort_keys=True) + "\n", encoding="utf-8")
         queue_items.append(
@@ -249,6 +284,8 @@ def write_static_retry_queue(
         "output_queue_file": str(output_queue_file),
         "output_root": output_root,
         "retryable_statuses": sorted(retryable_statuses),
+        "status_priority": list(status_priority or ()),
+        "tasks_json": str(tasks_json.resolve()),
     }
 
 
@@ -263,10 +300,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--server", required=True)
     parser.add_argument("--data-dir", required=True)
     parser.add_argument("--difficulty", default="level1")
-    parser.add_argument("--campaign", default="static_retryable")
+    parser.add_argument("--campaign", default="focus123_retryable")
     parser.add_argument("--codex-bin", default="codex")
     parser.add_argument("--codex-timeout-seconds", type=int, default=5400)
     parser.add_argument("--api-key-env", default="CYBERGYM_API_KEY")
+    parser.add_argument("--tasks-json", type=Path, default=Path("cybergym_data/tasks.json"))
     parser.add_argument(
         "--retryable-status",
         action="append",
@@ -274,12 +312,22 @@ def parse_args() -> argparse.Namespace:
         default=[],
         help="Repeatable. Defaults to standard static retryable statuses if omitted.",
     )
+    parser.add_argument(
+        "--status-priority",
+        action="append",
+        default=[],
+        help="Repeatable or comma-separated. Earlier statuses are queued first.",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     retryable_statuses = set(args.retryable_statuses or DEFAULT_RETRYABLE_STATUSES)
+    priority_parts: list[str] = []
+    for raw in args.status_priority:
+        priority_parts.extend(part.strip() for part in str(raw).split(","))
+    status_priority = tuple(part for part in priority_parts if part)
     summary = write_static_retry_queue(
         trajectory_index=args.trajectory_index,
         task_source=args.task_source,
@@ -292,9 +340,11 @@ def main() -> int:
         difficulty=args.difficulty,
         campaign=args.campaign,
         retryable_statuses=retryable_statuses,
+        status_priority=status_priority or None,
         codex_bin=args.codex_bin,
         codex_timeout_seconds=args.codex_timeout_seconds,
         api_key_env=args.api_key_env,
+        tasks_json=args.tasks_json,
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0

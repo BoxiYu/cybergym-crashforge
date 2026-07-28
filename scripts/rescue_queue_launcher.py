@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import fcntl
 import json
+import os
 import re
 import shlex
 import subprocess
@@ -22,6 +23,16 @@ CODEX_TASK_PATTERN = re.compile(r"codex exec -C (\S+)")
 MANIFEST_PATH_PATTERN = re.compile(r"--manifest (\S+)")
 DEFAULT_SKIP_CUMULATIVE_NO_VUL_THRESHOLD = 8
 DEFAULT_USAGE_LIMIT_SCAN_FILES = 200
+DEFAULT_GLOBAL_RUNNER_HEADROOM = 2
+DEFAULT_LOADAVG_LIMIT_FACTOR = 1.25
+DEFAULT_MIN_MEM_AVAILABLE_MB = 4096
+DEFAULT_MIN_SWAP_FREE_MB = 512
+DEFAULT_PRESSURE_POLL_MULTIPLIER = 6
+DEFAULT_MAX_PRESSURE_POLL_SECONDS = 60
+DEFAULT_SWAP_PRESSURE_DEGRADED_MIN_LOCAL = 3
+DEFAULT_SWAP_PRESSURE_DEGRADED_MIN_GLOBAL = 8
+DEFAULT_SWAP_PRESSURE_DEGRADED_SCALE = 0.65
+DEFAULT_SWAP_PRESSURE_DEGRADED_MEM_MULTIPLIER = 2.0
 USAGE_LIMIT_MESSAGE_FRAGMENT = "usage limit"
 USAGE_LIMIT_RESET_PATTERN = re.compile(
     r"try again at ([A-Za-z]{3,9} \d{1,2}(?:st|nd|rd|th), \d{4} \d{1,2}:\d{2} [AP]M)",
@@ -34,6 +45,7 @@ class QueueItem:
     manifest: str
     output_root: str
     name: str
+    task_id: str | None = None
     ready_json_path: str | None = None
     ready_json_field: str | None = None
     ready_json_value: str | None = None
@@ -42,6 +54,7 @@ class QueueItem:
 @dataclass
 class QueueLauncherState:
     processed_names: set[str]
+    processed_task_ids: set[str]
     queue_complete: bool = False
 
 
@@ -51,6 +64,15 @@ class UsageLimitBlock:
     events_path: Path
     message: str
     reset_at: datetime | None = None
+
+
+@dataclass(frozen=True)
+class SystemCapacitySnapshot:
+    cpu_count: int | None
+    loadavg_1m: float | None
+    mem_available_mb: float | None
+    swap_free_mb: float | None
+    swap_total_mb: float | None
 
 
 def now_utc() -> datetime:
@@ -78,6 +100,7 @@ def load_queue(queue_file: Path) -> list[QueueItem]:
                 manifest=str(manifest),
                 output_root=str(output_root),
                 name=str(name),
+                task_id=str(raw.get("task_id")) if raw.get("task_id") else None,
                 ready_json_path=raw.get("ready_json_path"),
                 ready_json_field=raw.get("ready_json_field"),
                 ready_json_value=str(raw.get("ready_json_value")) if raw.get("ready_json_value") is not None else None,
@@ -92,40 +115,82 @@ def default_state_file_path(queue_file: Path) -> Path:
 
 def load_queue_state(state_file: Path) -> QueueLauncherState:
     if not state_file.exists():
-        return QueueLauncherState(processed_names=set(), queue_complete=False)
-    payload = json.loads(state_file.read_text(encoding="utf-8"))
+        return QueueLauncherState(processed_names=set(), processed_task_ids=set(), queue_complete=False)
+    try:
+        payload = json.loads(state_file.read_text(encoding="utf-8"))
+    except (OSError, ValueError, json.JSONDecodeError):
+        return QueueLauncherState(processed_names=set(), processed_task_ids=set(), queue_complete=False)
     processed_raw = payload.get("processed_names") if isinstance(payload, dict) else None
+    processed_task_ids_raw = payload.get("processed_task_ids") if isinstance(payload, dict) else None
     processed_names = {str(item) for item in (processed_raw or []) if item}
+    processed_task_ids = {str(item) for item in (processed_task_ids_raw or []) if item}
     queue_complete = bool(payload.get("queue_complete")) if isinstance(payload, dict) else False
-    return QueueLauncherState(processed_names=processed_names, queue_complete=queue_complete)
+    return QueueLauncherState(
+        processed_names=processed_names,
+        processed_task_ids=processed_task_ids,
+        queue_complete=queue_complete,
+    )
 
 
 def write_queue_state(
     state_file: Path,
     *,
     processed_names: set[str],
+    processed_task_ids: set[str],
     queue_complete: bool,
 ) -> None:
     state_file.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "processed_names": sorted(processed_names),
+        "processed_task_ids": sorted(processed_task_ids),
         "queue_complete": bool(queue_complete),
         "updated_at": now_utc().isoformat(),
     }
     state_file.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def count_active_runners(ps_output: str) -> int:
+def normalize_scope_path(raw_path: str | None) -> Path | None:
+    if not raw_path:
+        return None
+    return Path(raw_path).resolve()
+
+
+def path_within_scope(raw_path: str | None, scope_root: Path | None) -> bool:
+    if scope_root is None:
+        return True
+    if not raw_path:
+        return False
+    candidate = Path(raw_path).resolve()
+    try:
+        candidate.relative_to(scope_root)
+    except ValueError:
+        return False
+    return True
+
+
+def count_active_runners(ps_output: str, *, output_root_scope: str | None = None) -> int:
+    scope_root = normalize_scope_path(output_root_scope)
     runner_parent_count = sum(1 for line in ps_output.splitlines() if is_active_runner_parent_command(line))
+    if scope_root is not None:
+        runner_parent_count = 0
+        for line in ps_output.splitlines():
+            if not is_active_runner_parent_command(line):
+                continue
+            argv = tokenize_process_command(line)
+            if not path_within_scope(extract_argv_flag_value(argv, "--output-root"), scope_root):
+                continue
+            runner_parent_count += 1
     codex_task_dirs: set[str] = set()
     for line in ps_output.splitlines():
-        if CODEX_TASK_MARKER not in line:
+        if CODEX_TASK_MARKER not in line or "codex_rescue_runs_local/" not in line:
             continue
         match = CODEX_TASK_PATTERN.search(line)
         if match is None:
             continue
         task_dir = Path(match.group(1))
         if task_dir.name != "task":
+            continue
+        if not path_within_scope(str(task_dir.parent), scope_root):
             continue
         result_path = task_dir.parent / "result.json"
         if result_path.exists():
@@ -173,12 +238,276 @@ def get_ps_output() -> str:
     return result.stdout
 
 
-def get_active_runner_count(ps_output: str | None = None) -> int:
-    return count_active_runners(ps_output if ps_output is not None else get_ps_output())
+def get_active_runner_count(ps_output: str | None = None, *, output_root_scope: str | None = None) -> int:
+    return count_active_runners(
+        ps_output if ps_output is not None else get_ps_output(),
+        output_root_scope=output_root_scope,
+    )
+
+
+def read_system_capacity_snapshot(proc_root: str | Path = "/proc") -> SystemCapacitySnapshot:
+    root = Path(proc_root)
+    cpu_count = os.cpu_count() or None
+    loadavg_1m: float | None = None
+    mem_available_mb: float | None = None
+    swap_free_mb: float | None = None
+    swap_total_mb: float | None = None
+
+    try:
+        loadavg_fields = (root / "loadavg").read_text(encoding="utf-8").split()
+    except OSError:
+        loadavg_fields = []
+    if loadavg_fields:
+        try:
+            loadavg_1m = float(loadavg_fields[0])
+        except ValueError:
+            loadavg_1m = None
+
+    try:
+        meminfo_lines = (root / "meminfo").read_text(encoding="utf-8").splitlines()
+    except OSError:
+        meminfo_lines = []
+    meminfo: dict[str, float] = {}
+    for line in meminfo_lines:
+        if ":" not in line:
+            continue
+        key, raw_value = line.split(":", 1)
+        fields = raw_value.strip().split()
+        if not fields:
+            continue
+        try:
+            value_kb = float(fields[0])
+        except ValueError:
+            continue
+        meminfo[key] = value_kb / 1024.0
+    mem_available_mb = meminfo.get("MemAvailable")
+    swap_free_mb = meminfo.get("SwapFree")
+    swap_total_mb = meminfo.get("SwapTotal")
+
+    return SystemCapacitySnapshot(
+        cpu_count=cpu_count,
+        loadavg_1m=loadavg_1m,
+        mem_available_mb=mem_available_mb,
+        swap_free_mb=swap_free_mb,
+        swap_total_mb=swap_total_mb,
+    )
+
+
+def resolve_global_runner_limit(
+    explicit_limit: int | None,
+    *,
+    cpu_count: int | None,
+    global_runner_headroom: int,
+) -> int | None:
+    if explicit_limit is not None:
+        return explicit_limit if explicit_limit > 0 else None
+    if cpu_count is None or cpu_count <= 0:
+        return None
+    return max(1, cpu_count - max(global_runner_headroom, 0))
+
+
+def system_launch_block_reason(
+    snapshot: SystemCapacitySnapshot,
+    *,
+    loadavg_limit_factor: float,
+    min_mem_available_mb: int,
+    min_swap_free_mb: int,
+) -> str | None:
+    if (
+        snapshot.swap_total_mb is not None
+        and snapshot.swap_total_mb > 0
+        and snapshot.swap_free_mb is not None
+        and snapshot.swap_free_mb < max(min_swap_free_mb, 0)
+    ):
+        return (
+            "swap_pressure "
+            f"swap_free_mb={snapshot.swap_free_mb:.0f} "
+            f"threshold_mb={max(min_swap_free_mb, 0)}"
+        )
+    if snapshot.mem_available_mb is not None and snapshot.mem_available_mb < max(min_mem_available_mb, 0):
+        return (
+            "memory_pressure "
+            f"mem_available_mb={snapshot.mem_available_mb:.0f} "
+            f"threshold_mb={max(min_mem_available_mb, 0)}"
+        )
+    if (
+        snapshot.cpu_count is not None
+        and snapshot.cpu_count > 0
+        and snapshot.loadavg_1m is not None
+        and snapshot.loadavg_1m > snapshot.cpu_count * max(loadavg_limit_factor, 0.1)
+    ):
+        return (
+            "load_pressure "
+            f"loadavg_1m={snapshot.loadavg_1m:.2f} "
+            f"threshold={snapshot.cpu_count * max(loadavg_limit_factor, 0.1):.2f}"
+        )
+    return None
+
+
+def swap_pressure_degraded_limits(
+    args: argparse.Namespace,
+    *,
+    snapshot: SystemCapacitySnapshot,
+    local_limit: int,
+    global_limit: int | None,
+) -> tuple[int, int | None] | None:
+    if snapshot.swap_total_mb is None or snapshot.swap_total_mb <= 0:
+        return None
+    if snapshot.swap_free_mb is None or snapshot.swap_free_mb >= max(getattr(args, "min_swap_free_mb", 0), 0):
+        return None
+
+    load_threshold = None
+    if snapshot.cpu_count is not None and snapshot.cpu_count > 0:
+        load_threshold = snapshot.cpu_count * max(getattr(args, "loadavg_limit_factor", DEFAULT_LOADAVG_LIMIT_FACTOR), 0.1)
+    if load_threshold is not None and snapshot.loadavg_1m is not None and snapshot.loadavg_1m > load_threshold:
+        return None
+
+    min_mem_available_mb = max(getattr(args, "min_mem_available_mb", DEFAULT_MIN_MEM_AVAILABLE_MB), 0)
+    required_mem_for_degraded = min_mem_available_mb * max(
+        float(getattr(args, "swap_pressure_degraded_mem_multiplier", DEFAULT_SWAP_PRESSURE_DEGRADED_MEM_MULTIPLIER)),
+        1.0,
+    )
+    if snapshot.mem_available_mb is None or snapshot.mem_available_mb < required_mem_for_degraded:
+        return None
+
+    configured_scale = max(
+        min(float(getattr(args, "swap_pressure_degraded_scale", DEFAULT_SWAP_PRESSURE_DEGRADED_SCALE)), 1.0),
+        0.05,
+    )
+    load_headroom = 1.0
+    if load_threshold is not None and snapshot.loadavg_1m is not None and load_threshold > 0:
+        load_headroom = max(0.0, min(1.0, 1.0 - (snapshot.loadavg_1m / load_threshold)))
+    scale = min(1.0, configured_scale + (0.15 * load_headroom))
+
+    degraded_local_floor = max(
+        1,
+        int(getattr(args, "swap_pressure_degraded_min_local", DEFAULT_SWAP_PRESSURE_DEGRADED_MIN_LOCAL) or 1),
+    )
+    degraded_local_limit = max(degraded_local_floor, int(local_limit * scale))
+    degraded_local_limit = min(local_limit, degraded_local_limit)
+
+    degraded_global_limit: int | None = global_limit
+    if global_limit is not None:
+        degraded_global_floor = max(
+            1,
+            int(getattr(args, "swap_pressure_degraded_min_global", DEFAULT_SWAP_PRESSURE_DEGRADED_MIN_GLOBAL) or 1),
+        )
+        degraded_global_limit = max(degraded_global_floor, int(global_limit * scale))
+        degraded_global_limit = min(global_limit, degraded_global_limit)
+
+    return degraded_local_limit, degraded_global_limit
+
+
+def compute_runner_capacity(
+    args: argparse.Namespace,
+    *,
+    ps_output: str,
+    proc_root: str | Path = "/proc",
+) -> dict[str, Any]:
+    active_runner_output_root = getattr(args, "active_runner_output_root", None)
+    local_active = get_active_runner_count(ps_output, output_root_scope=active_runner_output_root)
+    global_active = get_active_runner_count(ps_output)
+    snapshot = read_system_capacity_snapshot(proc_root=proc_root)
+    global_limit = resolve_global_runner_limit(
+        getattr(args, "global_max_active_runners", None),
+        cpu_count=snapshot.cpu_count,
+        global_runner_headroom=getattr(args, "global_runner_headroom", DEFAULT_GLOBAL_RUNNER_HEADROOM),
+    )
+    blocked_reason = system_launch_block_reason(
+        snapshot,
+        loadavg_limit_factor=getattr(args, "loadavg_limit_factor", DEFAULT_LOADAVG_LIMIT_FACTOR),
+        min_mem_available_mb=getattr(args, "min_mem_available_mb", DEFAULT_MIN_MEM_AVAILABLE_MB),
+        min_swap_free_mb=getattr(args, "min_swap_free_mb", DEFAULT_MIN_SWAP_FREE_MB),
+    )
+    effective_local_limit = args.max_active_runners
+    effective_global_limit = global_limit
+    if blocked_reason is not None and blocked_reason.startswith("swap_pressure "):
+        degraded_limits = swap_pressure_degraded_limits(
+            args,
+            snapshot=snapshot,
+            local_limit=args.max_active_runners,
+            global_limit=global_limit,
+        )
+        if degraded_limits is not None:
+            effective_local_limit, effective_global_limit = degraded_limits
+            blocked_reason = (
+                "swap_pressure_degraded "
+                f"swap_free_mb={snapshot.swap_free_mb:.0f} "
+                f"threshold_mb={max(getattr(args, 'min_swap_free_mb', DEFAULT_MIN_SWAP_FREE_MB), 0)} "
+                f"effective_local_limit={effective_local_limit} "
+                f"effective_global_limit={effective_global_limit}"
+            )
+        else:
+            effective_local_limit = args.max_active_runners
+            effective_global_limit = global_limit
+    local_slots = max(effective_local_limit - local_active, 0)
+    global_slots = local_slots if effective_global_limit is None else max(effective_global_limit - global_active, 0)
+    launch_slots = min(local_slots, global_slots)
+    if blocked_reason is not None and not blocked_reason.startswith("swap_pressure_degraded "):
+        launch_slots = 0
+    return {
+        "local_active": local_active,
+        "global_active": global_active,
+        "local_limit": effective_local_limit,
+        "global_limit": effective_global_limit,
+        "configured_local_limit": args.max_active_runners,
+        "configured_global_limit": global_limit,
+        "launch_slots": launch_slots,
+        "blocked_reason": blocked_reason,
+        "snapshot": snapshot,
+    }
+
+
+def is_system_pressure_reason(reason: str | None) -> bool:
+    if not reason:
+        return False
+    return reason.startswith("swap_pressure") or reason.startswith("memory_pressure ") or reason.startswith("load_pressure ")
+
+
+def pressure_backoff_seconds(args: argparse.Namespace) -> int:
+    base = max(int(getattr(args, "poll_seconds", 1) or 1), 1)
+    multiplier = max(int(getattr(args, "pressure_poll_multiplier", DEFAULT_PRESSURE_POLL_MULTIPLIER) or 1), 1)
+    max_seconds = max(int(getattr(args, "max_pressure_poll_seconds", DEFAULT_MAX_PRESSURE_POLL_SECONDS) or 1), base)
+    return min(max_seconds, base * multiplier)
+
+
+def iter_run_dir_matches(search_root: Path, pattern: str) -> list[Path]:
+    if not search_root.exists():
+        return []
+    matches: list[Path] = []
+    seen: set[Path] = set()
+    for depth in range(3):
+        prefix = "*/" * depth
+        for candidate in search_root.glob(f"{prefix}{pattern}"):
+            if not candidate.is_dir():
+                continue
+            try:
+                resolved = candidate.resolve()
+            except OSError:
+                continue
+            if resolved in seen:
+                continue
+            seen.add(resolved)
+            matches.append(candidate)
+    return sorted(matches, reverse=True)
 
 
 def load_manifest_entries(manifest_path: Path) -> list[dict[str, Any]]:
-    return [json.loads(line) for line in manifest_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    try:
+        lines = manifest_path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    entries: list[dict[str, Any]] = []
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            payload = json.loads(line)
+        except ValueError:
+            return []
+        if isinstance(payload, dict):
+            entries.append(payload)
+    return entries
 
 
 def load_single_task_manifest(manifest_path: Path) -> dict[str, Any] | None:
@@ -195,6 +524,18 @@ def extract_manifest_task_id(manifest_path: Path) -> str | None:
     entry = load_single_task_manifest(manifest_path)
     task_id = entry.get("task_id") if entry else None
     return str(task_id) if task_id else None
+
+
+def manifest_skip_cumulative_no_vul_threshold(manifest_path: Path) -> int | None:
+    entry = load_single_task_manifest(manifest_path)
+    if entry is None:
+        return None
+    raw_value = entry.get("skip_cumulative_no_vul_threshold")
+    try:
+        threshold = int(raw_value)
+    except (TypeError, ValueError):
+        return None
+    return threshold if threshold > 0 else None
 
 
 def parse_result_timestamp(value: Any) -> float | None:
@@ -219,9 +560,14 @@ def result_order_key(payload: dict[str, Any], result_path: Path) -> tuple[float,
 def pending_queue_items(
     queue_items: list[QueueItem],
     processed_names: set[str],
+    processed_task_ids: set[str],
     deferred_names: set[str] | None = None,
 ) -> list[QueueItem]:
-    pending = [item for item in queue_items if item.name not in processed_names]
+    pending = [
+        item
+        for item in queue_items
+        if item.name not in processed_names and item.task_id not in processed_task_ids
+    ]
     if not deferred_names:
         return pending
     undeferred = [item for item in pending if item.name not in deferred_names]
@@ -262,9 +608,7 @@ def find_latest_incomplete_item_run(item: QueueItem) -> Path | None:
         return None
     task_token = str(task_id).replace(":", "_")
     pattern = f"*{task_token}-codex-rescue-attempt{attempt}-*"
-    for candidate in sorted(output_root.rglob(pattern), reverse=True):
-        if not candidate.is_dir():
-            continue
+    for candidate in iter_run_dir_matches(output_root, pattern):
         if (candidate / "result.json").exists():
             continue
         if (
@@ -328,9 +672,7 @@ def find_existing_item_run(item: QueueItem, ps_output: str | None = None) -> Pat
     pattern = f"*{task_token}-codex-rescue-attempt{attempt}-*"
     task_matches: list[Path] = []
     manifest_matches: list[Path] = []
-    for candidate in sorted(output_root.rglob(pattern), reverse=True):
-        if not candidate.is_dir():
-            continue
+    for candidate in iter_run_dir_matches(output_root, pattern):
         if str(candidate / "task") in ps_text:
             task_matches.append(candidate)
             continue
@@ -348,9 +690,7 @@ def find_successful_task_run(task_id: str, results_root: Path) -> Path | None:
     task_token = str(task_id).replace(":", "_")
     pattern = f"*{task_token}-codex-rescue-attempt*-*"
     success_matches: list[Path] = []
-    for candidate in sorted(results_root.rglob(pattern), reverse=True):
-        if not candidate.is_dir():
-            continue
+    for candidate in iter_run_dir_matches(results_root, pattern):
         result_path = candidate / "result.json"
         if not result_path.exists():
             continue
@@ -367,6 +707,35 @@ def find_successful_task_run(task_id: str, results_root: Path) -> Path | None:
     return success_matches[0] if success_matches else None
 
 
+def backfill_processed_successes(
+    queue_items: list[QueueItem],
+    *,
+    processed_names: set[str],
+    processed_task_ids: set[str],
+    results_root: Path,
+    scheduler_log: Path | None = None,
+) -> int:
+    updated = 0
+    for item in queue_items:
+        if item.name in processed_names or (item.task_id and item.task_id in processed_task_ids):
+            continue
+        task_id = item.task_id or extract_manifest_task_id(Path(item.manifest))
+        if not task_id:
+            continue
+        success_run = find_successful_task_run(task_id, results_root)
+        if success_run is None:
+            continue
+        processed_names.add(item.name)
+        processed_task_ids.add(task_id)
+        updated += 1
+    if updated and scheduler_log is not None:
+        append_log(
+            scheduler_log,
+            f"backfilled_successes count={updated} processed_names={len(processed_names)} processed_task_ids={len(processed_task_ids)}",
+        )
+    return updated
+
+
 def load_task_result_history_summary(task_id: str, results_root: Path) -> dict[str, Any]:
     summary = {
         "task_id": task_id,
@@ -379,9 +748,7 @@ def load_task_result_history_summary(task_id: str, results_root: Path) -> dict[s
     task_token = str(task_id).replace(":", "_")
     pattern = f"*{task_token}-codex-rescue-attempt*-*"
     latest_order: tuple[float, float, float] | None = None
-    for candidate in sorted(results_root.rglob(pattern), reverse=True):
-        if not candidate.is_dir():
-            continue
+    for candidate in iter_run_dir_matches(results_root, pattern):
         result_path = candidate / "result.json"
         if not result_path.exists():
             continue
@@ -424,10 +791,8 @@ def find_active_task_run(task_id: str, results_root: Path, ps_output: str | None
             continue
         if manifest_task_id:
             active_manifest_paths_by_task_id.setdefault(manifest_task_id, []).append(manifest_path)
-    candidate_runs = sorted(results_root.rglob(pattern), reverse=True)
+    candidate_runs = iter_run_dir_matches(results_root, pattern)
     for candidate in candidate_runs:
-        if not candidate.is_dir():
-            continue
         if (candidate / "result.json").exists():
             continue
         if str(candidate / "task") in ps_text:
@@ -435,8 +800,6 @@ def find_active_task_run(task_id: str, results_root: Path, ps_output: str | None
     active_manifest_paths = active_manifest_paths_by_task_id.get(task_id) or []
     if active_manifest_paths:
         for candidate in candidate_runs:
-            if not candidate.is_dir():
-                continue
             if (candidate / "result.json").exists():
                 continue
             if (
@@ -506,14 +869,19 @@ def is_item_ready(item: QueueItem) -> tuple[bool, str | None]:
     return True, None
 
 
-def is_item_runtime_ready(item: QueueItem, local_images: set[str] | None) -> tuple[bool, dict[str, Any] | None]:
+def is_item_runtime_ready(
+    item: QueueItem,
+    local_images: set[str] | None,
+    *,
+    binary_dir: Path | None = None,
+) -> tuple[bool, dict[str, Any] | None]:
     try:
         task_id = extract_manifest_task_id(Path(item.manifest))
     except Exception:
         task_id = None
     if not task_id or local_images is None:
         return True, None
-    probe = rescue.inspect_runtime_assets(task_id, local_images=local_images)
+    probe = rescue.inspect_runtime_assets(task_id, local_images=local_images, binary_dir=binary_dir)
     if probe["issues"] or probe["missing_images"]:
         return False, probe
     return True, probe
@@ -683,8 +1051,25 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--run-log-dir", default="codex_rescue_runs_local/queue_logs")
     parser.add_argument("--results-root", default="codex_rescue_runs_local")
     parser.add_argument("--state-file")
+    parser.add_argument("--active-runner-output-root")
     parser.add_argument("--skip-cumulative-no-vul-threshold", type=int, default=DEFAULT_SKIP_CUMULATIVE_NO_VUL_THRESHOLD)
     parser.add_argument("--usage-limit-scan-files", type=int, default=DEFAULT_USAGE_LIMIT_SCAN_FILES)
+    parser.add_argument("--global-max-active-runners", type=int)
+    parser.add_argument("--global-runner-headroom", type=int, default=DEFAULT_GLOBAL_RUNNER_HEADROOM)
+    parser.add_argument("--loadavg-limit-factor", type=float, default=DEFAULT_LOADAVG_LIMIT_FACTOR)
+    parser.add_argument("--min-mem-available-mb", type=int, default=DEFAULT_MIN_MEM_AVAILABLE_MB)
+    parser.add_argument("--min-swap-free-mb", type=int, default=DEFAULT_MIN_SWAP_FREE_MB)
+    parser.add_argument("--pressure-poll-multiplier", type=int, default=DEFAULT_PRESSURE_POLL_MULTIPLIER)
+    parser.add_argument("--max-pressure-poll-seconds", type=int, default=DEFAULT_MAX_PRESSURE_POLL_SECONDS)
+    parser.add_argument("--swap-pressure-degraded-min-local", type=int, default=DEFAULT_SWAP_PRESSURE_DEGRADED_MIN_LOCAL)
+    parser.add_argument("--swap-pressure-degraded-min-global", type=int, default=DEFAULT_SWAP_PRESSURE_DEGRADED_MIN_GLOBAL)
+    parser.add_argument("--swap-pressure-degraded-scale", type=float, default=DEFAULT_SWAP_PRESSURE_DEGRADED_SCALE)
+    parser.add_argument(
+        "--swap-pressure-degraded-mem-multiplier",
+        type=float,
+        default=DEFAULT_SWAP_PRESSURE_DEGRADED_MEM_MULTIPLIER,
+    )
+    parser.add_argument("--ignore-usage-limit", action="store_true")
     return parser.parse_args()
 
 
@@ -700,15 +1085,58 @@ def main() -> int:
     queue_started_at = now_utc()
     initial_queue_items = load_queue(queue_file)
     append_log(scheduler_log, f"starting queue with {len(initial_queue_items)} items")
+    binary_dir = None
+    try:
+        server_health_payload = rescue.fetch_server_health(args.server)
+    except Exception as exc:  # noqa: BLE001
+        append_log(scheduler_log, f"warning: server_healthz_failed server={args.server} error={exc}")
+        server_health_payload = None
+    if server_health_payload is not None:
+        binary_dir_value = server_health_payload.get("binary_dir")
+        if binary_dir_value:
+            binary_dir = Path(binary_dir_value)
+            append_log(scheduler_log, f"runtime_mode=binary binary_dir={binary_dir}")
+        else:
+            append_log(scheduler_log, f"runtime_mode=image server={args.server}")
     state = load_queue_state(state_file)
     processed_names: set[str] = set(state.processed_names)
+    processed_task_ids: set[str] = set(state.processed_task_ids)
+    initial_queue_name_to_task_id = {item.name: item.task_id for item in initial_queue_items}
+    for processed_name in processed_names:
+        task_id = initial_queue_name_to_task_id.get(processed_name)
+        if task_id:
+            processed_task_ids.add(task_id)
     if processed_names:
         append_log(
             scheduler_log,
-            f"loaded_state processed_names={len(processed_names)} queue_complete={state.queue_complete} state_file={state_file}",
+            (
+                "loaded_state "
+                f"processed_names={len(processed_names)} "
+                f"processed_task_ids={len(processed_task_ids)} "
+                f"queue_complete={state.queue_complete} "
+                f"state_file={state_file}"
+            ),
         )
     else:
-        write_queue_state(state_file, processed_names=processed_names, queue_complete=False)
+        write_queue_state(
+            state_file,
+            processed_names=processed_names,
+            processed_task_ids=processed_task_ids,
+            queue_complete=False,
+        )
+    if backfill_processed_successes(
+        initial_queue_items,
+        processed_names=processed_names,
+        processed_task_ids=processed_task_ids,
+        results_root=Path(args.results_root),
+        scheduler_log=scheduler_log,
+    ):
+        write_queue_state(
+            state_file,
+            processed_names=processed_names,
+            processed_task_ids=processed_task_ids,
+            queue_complete=False,
+        )
     deferred_names: set[str] = set()
     launched_task_locks: dict[str, Any] = {}
     reserved_item_name: str | None = None
@@ -725,7 +1153,7 @@ def main() -> int:
             scheduler_log=scheduler_log,
         )
         queue_items = load_queue(queue_file)
-        pending_items = pending_queue_items(queue_items, processed_names, deferred_names)
+        pending_items = pending_queue_items(queue_items, processed_names, processed_task_ids, deferred_names)
         if not pending_items:
             if launched_task_locks:
                 append_log(
@@ -734,15 +1162,27 @@ def main() -> int:
                 )
                 time.sleep(args.poll_seconds)
                 continue
-            write_queue_state(state_file, processed_names=processed_names, queue_complete=True)
+            write_queue_state(
+                state_file,
+                processed_names=processed_names,
+                processed_task_ids=processed_task_ids,
+                queue_complete=True,
+            )
             append_log(scheduler_log, "queue complete")
             return 0
-        write_queue_state(state_file, processed_names=processed_names, queue_complete=False)
-        usage_limit_block = find_usage_limit_block(
-            results_root,
-            queue_started_at=queue_started_at,
-            scan_files=args.usage_limit_scan_files,
+        write_queue_state(
+            state_file,
+            processed_names=processed_names,
+            processed_task_ids=processed_task_ids,
+            queue_complete=False,
         )
+        usage_limit_block = None
+        if not getattr(args, "ignore_usage_limit", False):
+            usage_limit_block = find_usage_limit_block(
+                results_root,
+                queue_started_at=queue_started_at,
+                scan_files=args.usage_limit_scan_files,
+            )
         if usage_limit_block is not None:
             reset_at = usage_limit_block.reset_at.isoformat() if usage_limit_block.reset_at is not None else "unknown"
             append_log(
@@ -756,14 +1196,22 @@ def main() -> int:
                 ),
             )
             return 0
-        try:
-            local_images = rescue.list_local_docker_images()
-        except Exception:  # noqa: BLE001
-            local_images = None
+        local_images = None
+        if binary_dir is None:
+            try:
+                local_images = rescue.list_local_docker_images()
+            except Exception:  # noqa: BLE001
+                local_images = None
         waited = False
         made_progress = False
+        capacity = compute_runner_capacity(args, ps_output=ps_output)
+        if capacity["launch_slots"] <= 0 and is_system_pressure_reason(capacity["blocked_reason"]):
+            append_log(scheduler_log, f"waiting: {capacity['blocked_reason']} pending_items={len(pending_items)}")
+            time.sleep(pressure_backoff_seconds(args))
+            continue
         for item in pending_items:
             task_id = extract_manifest_task_id(Path(item.manifest))
+            item_skip_threshold = manifest_skip_cumulative_no_vul_threshold(Path(item.manifest))
             if reserved_item_name != item.name:
                 if reserved_task_lock is not None:
                     reserved_task_lock.close()
@@ -787,8 +1235,15 @@ def main() -> int:
                     reserved_task_id = None
                     reserved_item_name = None
                 processed_names.add(item.name)
+                if item.task_id:
+                    processed_task_ids.add(item.task_id)
                 deferred_names.discard(item.name)
-                write_queue_state(state_file, processed_names=processed_names, queue_complete=False)
+                write_queue_state(
+                    state_file,
+                    processed_names=processed_names,
+                    processed_task_ids=processed_task_ids,
+                    queue_complete=False,
+                )
                 made_progress = True
                 continue
             if task_id:
@@ -804,19 +1259,28 @@ def main() -> int:
                         reserved_task_id = None
                         reserved_item_name = None
                     processed_names.add(item.name)
+                    if item.task_id:
+                        processed_task_ids.add(item.task_id)
                     deferred_names.discard(item.name)
-                    write_queue_state(state_file, processed_names=processed_names, queue_complete=False)
+                    write_queue_state(
+                        state_file,
+                        processed_names=processed_names,
+                        processed_task_ids=processed_task_ids,
+                        queue_complete=False,
+                    )
                     made_progress = True
                     continue
                 task_history_summary = load_task_result_history_summary(task_id, results_root)
+                skip_threshold = item_skip_threshold or args.skip_cumulative_no_vul_threshold
                 if (
-                    int(task_history_summary.get("cumulative_no_vul_records") or 0) >= args.skip_cumulative_no_vul_threshold
+                    int(task_history_summary.get("cumulative_no_vul_records") or 0) >= skip_threshold
                     and task_history_summary.get("latest_status") != "success"
                 ):
                     append_log(
                         scheduler_log,
                         (
                             f"skipping: task_exhausted_no_vul next={item.name} task_id={task_id} "
+                            f"threshold={skip_threshold} "
                             f"cumulative_no_vul={task_history_summary['cumulative_no_vul_records']} "
                             f"latest_status={task_history_summary.get('latest_status')} "
                             f"run_root={task_history_summary.get('latest_run_root')}"
@@ -828,8 +1292,15 @@ def main() -> int:
                         reserved_task_id = None
                         reserved_item_name = None
                     processed_names.add(item.name)
+                    if item.task_id:
+                        processed_task_ids.add(item.task_id)
                     deferred_names.discard(item.name)
-                    write_queue_state(state_file, processed_names=processed_names, queue_complete=False)
+                    write_queue_state(
+                        state_file,
+                        processed_names=processed_names,
+                        processed_task_ids=processed_task_ids,
+                        queue_complete=False,
+                    )
                     made_progress = True
                     continue
                 active_task_run = find_active_task_run(task_id, results_root, ps_output=ps_output)
@@ -845,7 +1316,7 @@ def main() -> int:
                         reserved_item_name = None
                     deferred_names.add(item.name)
                     continue
-            runtime_ready, runtime_probe = is_item_runtime_ready(item, local_images)
+            runtime_ready, runtime_probe = is_item_runtime_ready(item, local_images, binary_dir=binary_dir)
             if not runtime_ready:
                 append_log(
                     scheduler_log,
@@ -866,8 +1337,7 @@ def main() -> int:
                 append_log(scheduler_log, f"waiting: item_not_ready next={item.name} reason={reason}")
                 waited = True
                 break
-            active = get_active_runner_count(ps_output)
-            if active < args.max_active_runners:
+            if capacity["launch_slots"] > 0:
                 launch_manifest(item, args, scheduler_log)
                 if reserved_task_id and reserved_task_lock is not None:
                     launched_task_locks[reserved_task_id] = reserved_task_lock
@@ -875,11 +1345,25 @@ def main() -> int:
                     reserved_task_id = None
                     reserved_item_name = None
                 processed_names.add(item.name)
+                if item.task_id:
+                    processed_task_ids.add(item.task_id)
                 deferred_names.discard(item.name)
-                write_queue_state(state_file, processed_names=processed_names, queue_complete=False)
+                write_queue_state(
+                    state_file,
+                    processed_names=processed_names,
+                    processed_task_ids=processed_task_ids,
+                    queue_complete=False,
+                )
                 made_progress = True
                 break
-            append_log(scheduler_log, f"waiting: active_runners={active} max={args.max_active_runners} next={item.name}")
+            wait_reason = capacity["blocked_reason"]
+            if wait_reason is None:
+                wait_reason = (
+                    "capacity_exhausted "
+                    f"local_active={capacity['local_active']}/{capacity['local_limit']} "
+                    f"global_active={capacity['global_active']}/{capacity['global_limit']}"
+                )
+            append_log(scheduler_log, f"waiting: {wait_reason} next={item.name}")
             waited = True
             break
         if made_progress:
