@@ -250,7 +250,11 @@ def build_ranked_tasks(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build a project-prioritized official Level1 wave task list.")
-    parser.add_argument("--scoreboard-json", type=Path, default=ROOT / "reports" / "strict_level1_scoreboard_2026-07-28.json")
+    parser.add_argument(
+        "--scoreboard-json",
+        type=Path,
+        default=ROOT / "reports" / "official_level1_scoreboard_2026-07-28.json",
+    )
     parser.add_argument("--reports-root", type=Path, default=ROOT / "reports")
     parser.add_argument("--results-root", type=Path, default=ROOT / "codex_rescue_runs_local")
     parser.add_argument("--task-catalog-json", type=Path, default=ROOT / "cybergym_data" / "tasks.json")
@@ -267,7 +271,7 @@ def main() -> int:
         "--selection-pool",
         choices=("scoreboard_clean", "task_catalog"),
         default="scoreboard_clean",
-        help="Choose candidates from the strict clean-scoreboard pool or the full task catalog.",
+        help="Choose candidates from the official clean-scoreboard pool or the full task catalog.",
     )
     parser.add_argument(
         "--project-name",
