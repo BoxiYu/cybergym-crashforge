@@ -135,7 +135,10 @@ def collect_wave_summary(reports_root: Path, wave_name: str) -> dict[str, Any]:
         for row in tasks
         if str(row.get("status") or "") == "active_no_result"
     ]
+    active_prompt_focus_count = sum(1 for sample in active_samples if sample.get("prompt_has_campaign_focus"))
+    active_artifactful_count = sum(1 for sample in active_samples if sample.get("artifact_preview"))
     prompt_focus_completed_count = 0
+    prompt_focus_no_submission_count = 0
     for row in completed_rows:
         run_root = Path(str(row.get("run_root") or ""))
         prompt_path = run_root / "prompt.txt"
@@ -143,6 +146,8 @@ def collect_wave_summary(reports_root: Path, wave_name: str) -> dict[str, Any]:
             try:
                 if "Campaign focus:" in prompt_path.read_text(encoding="utf-8", errors="ignore"):
                     prompt_focus_completed_count += 1
+                    if row.get("status") == "no_submission":
+                        prompt_focus_no_submission_count += 1
             except OSError:
                 pass
     return {
@@ -170,11 +175,14 @@ def collect_wave_summary(reports_root: Path, wave_name: str) -> dict[str, Any]:
         "completed_task_count": len(completed_rows),
         "completed_status_counts": completed_status_counts,
         "completed_prompt_focus_count": prompt_focus_completed_count,
+        "completed_prompt_focus_no_submission_count": prompt_focus_no_submission_count,
         "live_final_submission_success_task_count": int(
             (live.get("summary") or {}).get("final_submission_success_task_count")
             or live.get("final_submission_success_task_count")
             or 0
         ),
+        "active_prompt_focus_count": active_prompt_focus_count,
+        "active_artifactful_count": active_artifactful_count,
         "active_samples": active_samples,
         "completed_rows": completed_rows,
     }
@@ -230,7 +238,13 @@ def main() -> int:
             "pending_item_count": sum(int(row.get("pending_item_count") or 0) for row in rows),
             "deferred_item_count": sum(int(row.get("deferred_item_count") or 0) for row in rows),
             "live_active_task_count": sum(int(row.get("live_active_task_count") or 0) for row in rows),
+            "active_prompt_focus_count": sum(int(row.get("active_prompt_focus_count") or 0) for row in rows),
+            "active_artifactful_count": sum(int(row.get("active_artifactful_count") or 0) for row in rows),
             "completed_task_count": sum(int(row.get("completed_task_count") or 0) for row in rows),
+            "completed_prompt_focus_count": sum(int(row.get("completed_prompt_focus_count") or 0) for row in rows),
+            "completed_prompt_focus_no_submission_count": sum(
+                int(row.get("completed_prompt_focus_no_submission_count") or 0) for row in rows
+            ),
             "final_submission_success_task_count": sum(
                 int(row.get("live_final_submission_success_task_count") or 0) for row in rows
             ),
@@ -253,7 +267,11 @@ def main() -> int:
         f"- Pending items: `{payload['summary']['pending_item_count']}`",
         f"- Deferred items: `{payload['summary']['deferred_item_count']}`",
         f"- Live active tasks: `{payload['summary']['live_active_task_count']}`",
+        f"- Active prompt-focus tasks: `{payload['summary']['active_prompt_focus_count']}`",
+        f"- Active artifact-bearing tasks: `{payload['summary']['active_artifactful_count']}`",
         f"- Completed tasks: `{payload['summary']['completed_task_count']}`",
+        f"- Completed prompt-focus tasks: `{payload['summary']['completed_prompt_focus_count']}`",
+        f"- Completed prompt-focus no-submissions: `{payload['summary']['completed_prompt_focus_no_submission_count']}`",
         f"- Final-submission successes in these waves: `{payload['summary']['final_submission_success_task_count']}`",
         "",
     ]
@@ -265,7 +283,8 @@ def main() -> int:
                 f"- Queue complete: `{row['queue_complete']}`",
                 f"- Queue items: `{row['queue_item_count']}` | processed=`{row['processed_task_count']}` | pending=`{row['pending_item_count']}` | deferred=`{row['deferred_item_count']}`",
                 f"- Launcher capacity: local_active=`{row['local_active']}` / local_limit=`{row['local_limit']}` | launch_slots=`{row['launch_slots']}` | blocked_reason=`{row['blocked_reason']}`",
-                f"- Live active tasks: `{row['live_active_task_count']}` | completed=`{row['completed_task_count']}` | prompt-focus-completed=`{row['completed_prompt_focus_count']}` | successes=`{row['live_final_submission_success_task_count']}`",
+                f"- Live active tasks: `{row['live_active_task_count']}` | active_prompt_focus=`{row['active_prompt_focus_count']}` | active_artifactful=`{row['active_artifactful_count']}`",
+                f"- Completed=`{row['completed_task_count']}` | prompt-focus-completed=`{row['completed_prompt_focus_count']}` | prompt-focus-no-submission=`{row['completed_prompt_focus_no_submission_count']}` | successes=`{row['live_final_submission_success_task_count']}`",
                 f"- State updated at: `{row['state_updated_at']}`",
             ]
         )
