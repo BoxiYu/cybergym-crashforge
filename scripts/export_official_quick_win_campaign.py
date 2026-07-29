@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -49,6 +50,71 @@ def collect_completed_rows(tasks: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return completed
 
 
+def summarize_run_artifacts(run_root: Path) -> dict[str, Any]:
+    summary: dict[str, Any] = {
+        "prompt_has_campaign_focus": False,
+        "events_age_seconds": None,
+        "last_message_age_seconds": None,
+        "artifact_preview": [],
+    }
+    prompt_path = run_root / "prompt.txt"
+    if prompt_path.exists():
+        try:
+            summary["prompt_has_campaign_focus"] = "Campaign focus:" in prompt_path.read_text(
+                encoding="utf-8", errors="ignore"
+            )
+        except OSError:
+            summary["prompt_has_campaign_focus"] = False
+    now = time.time()
+    events_path = run_root / "codex_events.jsonl"
+    if events_path.exists():
+        try:
+            summary["events_age_seconds"] = int(now - events_path.stat().st_mtime)
+        except OSError:
+            summary["events_age_seconds"] = None
+    last_message_path = run_root / "codex_last_message.md"
+    if last_message_path.exists():
+        try:
+            summary["last_message_age_seconds"] = int(now - last_message_path.stat().st_mtime)
+        except OSError:
+            summary["last_message_age_seconds"] = None
+    task_dir = run_root / "task"
+    if not task_dir.exists():
+        return summary
+    ranked: list[tuple[float, str, int]] = []
+    for path in task_dir.rglob("*"):
+        if not path.is_file():
+            continue
+        try:
+            rel = str(path.relative_to(task_dir))
+            stat = path.stat()
+        except OSError:
+            continue
+        if rel.startswith(("source-vul/", ".git/", ".codex/", "tmp/", "node_modules/")):
+            continue
+        if rel == "repo-vul.tar.gz" or rel.startswith(("build", "build-")):
+            continue
+        if path.name in {
+            "AGENTS.md",
+            "README.md",
+            "description.txt",
+            "submit.sh",
+            "submit.original.sh",
+            "OFFICIAL_TASK_GUIDANCE.md",
+            "OFFICIAL_FINAL_RESPONSE_TEMPLATE.md",
+        }:
+            continue
+        if stat.st_size > 10 * 1024 * 1024:
+            continue
+        ranked.append((stat.st_mtime, rel, stat.st_size))
+    ranked.sort(reverse=True)
+    summary["artifact_preview"] = [
+        {"path": rel, "size": size}
+        for _mtime, rel, size in ranked[:6]
+    ]
+    return summary
+
+
 def collect_wave_summary(reports_root: Path, wave_name: str) -> dict[str, Any]:
     wave_dir = reports_root / wave_name
     state = read_json_if_exists(wave_dir / "combined_queue.binary.state.json")
@@ -64,10 +130,21 @@ def collect_wave_summary(reports_root: Path, wave_name: str) -> dict[str, Any]:
             "status": row.get("status"),
             "elapsed_seconds": row.get("elapsed_seconds"),
             "run_root": row.get("run_root"),
+            **summarize_run_artifacts(Path(str(row.get("run_root") or ""))),
         }
         for row in tasks
         if str(row.get("status") or "") == "active_no_result"
     ]
+    prompt_focus_completed_count = 0
+    for row in completed_rows:
+        run_root = Path(str(row.get("run_root") or ""))
+        prompt_path = run_root / "prompt.txt"
+        if prompt_path.exists():
+            try:
+                if "Campaign focus:" in prompt_path.read_text(encoding="utf-8", errors="ignore"):
+                    prompt_focus_completed_count += 1
+            except OSError:
+                pass
     return {
         "wave_name": wave_name,
         "wave_dir": str(wave_dir.resolve()),
@@ -92,6 +169,7 @@ def collect_wave_summary(reports_root: Path, wave_name: str) -> dict[str, Any]:
         "live_latest_task_count": int(live.get("latest_task_count") or 0),
         "completed_task_count": len(completed_rows),
         "completed_status_counts": completed_status_counts,
+        "completed_prompt_focus_count": prompt_focus_completed_count,
         "live_final_submission_success_task_count": int(
             (live.get("summary") or {}).get("final_submission_success_task_count")
             or live.get("final_submission_success_task_count")
@@ -187,7 +265,7 @@ def main() -> int:
                 f"- Queue complete: `{row['queue_complete']}`",
                 f"- Queue items: `{row['queue_item_count']}` | processed=`{row['processed_task_count']}` | pending=`{row['pending_item_count']}` | deferred=`{row['deferred_item_count']}`",
                 f"- Launcher capacity: local_active=`{row['local_active']}` / local_limit=`{row['local_limit']}` | launch_slots=`{row['launch_slots']}` | blocked_reason=`{row['blocked_reason']}`",
-                f"- Live active tasks: `{row['live_active_task_count']}` | completed=`{row['completed_task_count']}` | successes=`{row['live_final_submission_success_task_count']}`",
+                f"- Live active tasks: `{row['live_active_task_count']}` | completed=`{row['completed_task_count']}` | prompt-focus-completed=`{row['completed_prompt_focus_count']}` | successes=`{row['live_final_submission_success_task_count']}`",
                 f"- State updated at: `{row['state_updated_at']}`",
             ]
         )
@@ -203,8 +281,13 @@ def main() -> int:
             lines.append("- Active samples:")
             for sample in row["active_samples"][:6]:
                 lines.append(
-                    f"  - `{sample['task_id']}` | status=`{sample['status']}` | elapsed_s=`{sample['elapsed_seconds']}` | run=`{sample['run_root']}`"
+                    f"  - `{sample['task_id']}` | status=`{sample['status']}` | elapsed_s=`{sample['elapsed_seconds']}` | prompt_focus=`{sample['prompt_has_campaign_focus']}` | events_age_s=`{sample['events_age_seconds']}` | last_msg_age_s=`{sample['last_message_age_seconds']}` | run=`{sample['run_root']}`"
                 )
+                if sample["artifact_preview"]:
+                    artifact_text = " | ".join(
+                        f"`{item['path']}` ({item['size']} B)" for item in sample["artifact_preview"][:4]
+                    )
+                    lines.append(f"    - artifacts: {artifact_text}")
         if row["completed_rows"]:
             lines.append("- Completed samples:")
             for sample in row["completed_rows"][:6]:
