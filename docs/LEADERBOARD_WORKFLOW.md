@@ -153,6 +153,7 @@ For the official-rule public push, we now recommend two parallel queue types:
 
 1. `frontier`: new tasks chosen from projects that already convert well
 2. `failed_rerun`: clean, evidence-complete submitted failures that are close to a counted success
+3. `mismatch`: post-template tasks where local validation used the wrong target family for the server verifier
 
 The frontier selector is:
 
@@ -169,6 +170,10 @@ bash scripts/launch_official_frontier_wave.sh
 
 ```bash
 bash scripts/launch_official_failed_rerun_wave.sh
+```
+
+```bash
+bash scripts/launch_official_mismatch_wave.sh
 ```
 
 These are intended for the official-only lane. They should be paired with the

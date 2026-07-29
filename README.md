@@ -38,8 +38,10 @@ The repo is intentionally light on framework code. Most files are plain Python e
 - `scripts/export_stubborn_failure_task_source.py`: split stubborn tails into actionable task-source packets
 - `scripts/build_official_priority_wave.py`: build a new-task official frontier queue from high-yield projects
 - `scripts/build_official_failed_rerun_wave.py`: build an official rerun queue from clean submitted failures
+- `scripts/build_official_mismatch_wave.py`: build an official mismatch-focused rerun queue from post-template local-vs-server gaps
 - `scripts/launch_official_frontier_wave.sh`: stage and launch the official frontier lane
 - `scripts/launch_official_failed_rerun_wave.sh`: stage and launch the official failed-rerun lane
+- `scripts/launch_official_mismatch_wave.sh`: stage and launch the official mismatch lane
 - `scripts/split_wave_autopilot.py`: reference autopilot for multi-wave rebalancing
 - `scripts/summarize_group_results.py`: compute pass-rate snapshots from the trajectory index
 - `splits/group_*.md`: public split-group task lists used by the campaign helpers
