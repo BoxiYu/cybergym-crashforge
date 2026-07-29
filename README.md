@@ -39,9 +39,13 @@ The repo is intentionally light on framework code. Most files are plain Python e
 - `scripts/build_official_priority_wave.py`: build a new-task official frontier queue from high-yield projects
 - `scripts/build_official_failed_rerun_wave.py`: build an official rerun queue from clean submitted failures
 - `scripts/build_official_mismatch_wave.py`: build an official mismatch-focused rerun queue from post-template local-vs-server gaps
+- `scripts/export_official_quick_wins.py`: build operator-facing quick-win remediation queues from post-template official reports
+- `scripts/export_official_quick_win_reruns.py`: turn those quick-win queues into rerunnable task lists
 - `scripts/launch_official_frontier_wave.sh`: stage and launch the official frontier lane
 - `scripts/launch_official_failed_rerun_wave.sh`: stage and launch the official failed-rerun lane
 - `scripts/launch_official_mismatch_wave.sh`: stage and launch the official mismatch lane
+- `scripts/launch_official_quick_win_priority_a.sh`: launch the format/submission-recovery quick-win lane
+- `scripts/launch_official_quick_win_priority_b.sh`: launch the bundled-target-mismatch quick-win lane
 - `scripts/export_official_submission_blockers.py`: compute official-rule blockers against the current target rate
 - `scripts/export_official_post_template_watch.py`: watch post-template official conversion health
 - `scripts/export_official_control_panel.py`: publish one compact official monitoring summary

@@ -154,6 +154,8 @@ For the official-rule public push, we now recommend two parallel queue types:
 1. `frontier`: new tasks chosen from projects that already convert well
 2. `failed_rerun`: clean, evidence-complete submitted failures that are close to a counted success
 3. `mismatch`: post-template tasks where local validation used the wrong target family for the server verifier
+4. `quick_win_priority_a`: post-template near-misses that need bounded replay of the strongest local artifact or seed-derived candidate before an intentional no-submission
+5. `quick_win_priority_b`: post-template near-misses that mainly need validation on the correct bundled target family
 
 The frontier selector is:
 
@@ -180,9 +182,24 @@ bash scripts/launch_official_failed_rerun_wave.sh
 bash scripts/launch_official_mismatch_wave.sh
 ```
 
+```bash
+bash scripts/launch_official_quick_win_priority_a.sh
+```
+
+```bash
+bash scripts/launch_official_quick_win_priority_b.sh
+```
+
 These are intended for the official-only lane. They should be paired with the
 local rule that the agent only sees the current task's allowed Level1 inputs,
 not other run directories, saved PoCs, patch files, or fix-side assets.
+
+The official runner now emits campaign-aware guidance for these lanes:
+
+- quick-win priority A biases the agent toward replaying and lightly mutating
+  one strongest bundled-seed or crash-artifact path before it gives up
+- quick-win priority B biases the agent toward shipped validators, fuzzers, and
+  matching target families when rebuilt CLIs disagree with the bundled assets
 
 Fresh binary wave launches default their server log roots to
 `server_poc_<wave_name>`, which avoids collisions when multiple official waves
