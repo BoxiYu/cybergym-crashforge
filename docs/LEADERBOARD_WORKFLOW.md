@@ -223,6 +223,17 @@ python scripts/export_official_control_panel.py
 These helpers default to the live `85%` campaign target so the reported
 remaining-success count matches the current public push goal.
 
+For the quick-win subcampaign specifically, use:
+
+```bash
+python scripts/export_official_quick_win_campaign.py
+```
+
+That report now auto-discovers the canonical dated quick-win waves such as
+`official_level1_quick_win_priority_a_2026-07-29_d2` / `_d3` / `_d4` and the
+matching priority-B waves, so the live active-task count stays aligned with the
+actual official reruns in flight.
+
 ## Where verified PoCs are stored
 
 The authoritative PoC store is the server `log_dir`, not the run directory.

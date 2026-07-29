@@ -41,6 +41,7 @@ The repo is intentionally light on framework code. Most files are plain Python e
 - `scripts/build_official_mismatch_wave.py`: build an official mismatch-focused rerun queue from post-template local-vs-server gaps
 - `scripts/export_official_quick_wins.py`: build operator-facing quick-win remediation queues from post-template official reports
 - `scripts/export_official_quick_win_reruns.py`: turn those quick-win queues into rerunnable task lists
+- `scripts/export_official_quick_win_campaign.py`: summarize all active canonical official quick-win waves in one live campaign view
 - `scripts/launch_official_frontier_wave.sh`: stage and launch the official frontier lane
 - `scripts/launch_official_failed_rerun_wave.sh`: stage and launch the official failed-rerun lane
 - `scripts/launch_official_mismatch_wave.sh`: stage and launch the official mismatch lane
