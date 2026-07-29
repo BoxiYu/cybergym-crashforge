@@ -193,6 +193,19 @@ lowest-yield frontier waves with a smaller `SPLIT_GROUP_MAX_ACTIVE` and a
 positive `SPLIT_GROUP_MIN_SWAP_FREE_MB` so existing runs can drain before more
 heavy build jobs are admitted.
 
+## Official monitoring loop
+
+Refresh the compact official monitoring set after meaningful wave progress:
+
+```bash
+python scripts/export_official_submission_blockers.py
+python scripts/export_official_post_template_watch.py
+python scripts/export_official_control_panel.py
+```
+
+These helpers default to the live `85%` campaign target so the reported
+remaining-success count matches the current public push goal.
+
 ## Where verified PoCs are stored
 
 The authoritative PoC store is the server `log_dir`, not the run directory.

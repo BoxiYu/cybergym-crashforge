@@ -42,6 +42,9 @@ The repo is intentionally light on framework code. Most files are plain Python e
 - `scripts/launch_official_frontier_wave.sh`: stage and launch the official frontier lane
 - `scripts/launch_official_failed_rerun_wave.sh`: stage and launch the official failed-rerun lane
 - `scripts/launch_official_mismatch_wave.sh`: stage and launch the official mismatch lane
+- `scripts/export_official_submission_blockers.py`: compute official-rule blockers against the current target rate
+- `scripts/export_official_post_template_watch.py`: watch post-template official conversion health
+- `scripts/export_official_control_panel.py`: publish one compact official monitoring summary
 - `scripts/split_wave_autopilot.py`: reference autopilot for multi-wave rebalancing
 - `scripts/summarize_group_results.py`: compute pass-rate snapshots from the trajectory index
 - `splits/group_*.md`: public split-group task lists used by the campaign helpers
@@ -74,6 +77,9 @@ The official frontier selector defaults to the public official scoreboard, and
 fresh binary wave launchers default their server log roots to
 `server_poc_<wave_name>` so concurrent official waves do not collide on a
 shared generic log directory.
+
+The official monitoring helpers also default to the current `85%` public goal
+so blocker counts and control-panel summaries stay aligned with the live push.
 
 ## Sync cadence
 
