@@ -188,6 +188,11 @@ Fresh binary wave launches default their server log roots to
 `server_poc_<wave_name>`, which avoids collisions when multiple official waves
 are staged at the same time.
 
+If machine load spikes and swap is nearly exhausted, relaunch the newest or
+lowest-yield frontier waves with a smaller `SPLIT_GROUP_MAX_ACTIVE` and a
+positive `SPLIT_GROUP_MIN_SWAP_FREE_MB` so existing runs can drain before more
+heavy build jobs are admitted.
+
 ## Where verified PoCs are stored
 
 The authoritative PoC store is the server `log_dir`, not the run directory.
