@@ -31,6 +31,39 @@ def load_used_tasks(selection_paths: list[Path]) -> set[str]:
     return used
 
 
+def collect_selection_paths(
+    reports_root: Path,
+    explicit_paths: list[Path],
+    output_dir: Path,
+    auto_include_official_wave_selections: bool,
+) -> list[Path]:
+    seen: set[Path] = set()
+    ordered: list[Path] = []
+
+    def add(path: Path) -> None:
+        resolved = path.resolve()
+        if resolved == (output_dir / "task_selection.json").resolve():
+            return
+        if resolved in seen or not resolved.exists():
+            return
+        seen.add(resolved)
+        ordered.append(resolved)
+
+    for path in explicit_paths:
+        add(path)
+
+    if auto_include_official_wave_selections:
+        patterns = (
+            "official_level1*_source/task_selection.json",
+            "official_level1_fast_wave_*_source/task_selection.json",
+        )
+        for pattern in patterns:
+            for path in sorted(reports_root.glob(pattern)):
+                add(path)
+
+    return ordered
+
+
 def load_active_wave_tasks(state_paths: list[Path]) -> set[str]:
     active: set[str] = set()
     for path in state_paths:
@@ -54,6 +87,36 @@ def load_active_wave_tasks(state_paths: list[Path]) -> set[str]:
             if isinstance(task_id, str) and task_id:
                 active.add(task_id)
     return active
+
+
+def collect_active_state_paths(
+    reports_root: Path,
+    explicit_paths: list[Path],
+    auto_exclude_official_wave_state: bool,
+) -> list[Path]:
+    seen: set[Path] = set()
+    ordered: list[Path] = []
+
+    def add(path: Path) -> None:
+        resolved = path.resolve()
+        if resolved in seen or not resolved.exists():
+            return
+        seen.add(resolved)
+        ordered.append(resolved)
+
+    for path in explicit_paths:
+        add(path)
+
+    if auto_exclude_official_wave_state:
+        patterns = (
+            "official_level1*/combined_queue.binary.state.json",
+            "official_level1_fast_wave_*/combined_queue.binary.state.json",
+        )
+        for pattern in patterns:
+            for path in sorted(reports_root.glob(pattern)):
+                add(path)
+
+    return ordered
 
 
 def load_project_by_task(tasks_json: Path) -> dict[str, str]:
@@ -101,6 +164,7 @@ def main() -> int:
         type=Path,
         default=ROOT / "reports" / "official_level1_scoreboard_2026-07-28.json",
     )
+    parser.add_argument("--reports-root", type=Path, default=ROOT / "reports")
     parser.add_argument("--tasks-json", type=Path, default=ROOT / "cybergym_data" / "tasks.json")
     parser.add_argument("--selection-json", type=Path, action="append", default=[])
     parser.add_argument("--exclude-wave-state", type=Path, action="append", default=[])
@@ -118,13 +182,39 @@ def main() -> int:
     parser.add_argument("--require-evidence-complete", action="store_true")
     parser.add_argument("--exclude-forbidden-access", action="store_true")
     parser.add_argument("--exclude-network-flagged", action="store_true")
+    parser.add_argument(
+        "--auto-include-official-wave-selections",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Automatically exclude tasks already present in official wave selection JSONs under reports/.",
+    )
+    parser.add_argument(
+        "--auto-exclude-official-wave-state",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Automatically exclude tasks that are still pending or active in official wave state files under reports/.",
+    )
     args = parser.parse_args()
 
     scoreboard = read_json(args.scoreboard_json.resolve())
     project_by_task = load_project_by_task(args.tasks_json.resolve())
     project_rates = build_project_rates(scoreboard, project_by_task)
-    used_tasks = load_used_tasks([path.resolve() for path in args.selection_json])
-    active_tasks = load_active_wave_tasks([path.resolve() for path in args.exclude_wave_state])
+    reports_root = args.reports_root.resolve()
+    output_dir = args.output_dir.resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    selection_paths = collect_selection_paths(
+        reports_root,
+        [path.resolve() for path in args.selection_json],
+        output_dir,
+        args.auto_include_official_wave_selections,
+    )
+    used_tasks = load_used_tasks(selection_paths)
+    active_state_paths = collect_active_state_paths(
+        reports_root,
+        [path.resolve() for path in args.exclude_wave_state],
+        args.auto_exclude_official_wave_state,
+    )
+    active_tasks = load_active_wave_tasks(active_state_paths)
     allowed_projects = {value for value in args.project_name if value}
     allowed_tasks = {value for value in args.task_id if value}
     task_prefixes = tuple(value for value in args.task_prefix if value)
@@ -176,8 +266,6 @@ def main() -> int:
     selected = candidates[: max(args.count, 0)]
     selected_tasks = [task_id for _score, _project, task_id, _row in selected]
 
-    output_dir = args.output_dir.resolve()
-    output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "tasks.md").write_text("\n".join(selected_tasks) + ("\n" if selected_tasks else ""), encoding="utf-8")
     payload = {
         "generated_at": datetime.now(UTC).isoformat(),
@@ -188,13 +276,17 @@ def main() -> int:
             "project_names": sorted(allowed_projects),
             "task_ids": sorted(allowed_tasks),
             "task_prefixes": list(task_prefixes),
-            "excluded_active_wave_state_files": [str(path.resolve()) for path in args.exclude_wave_state],
+            "selection_json_files": [str(path) for path in selection_paths],
+            "excluded_active_wave_state_files": [str(path) for path in active_state_paths],
             "require_clean_local_only": args.require_clean_local_only,
             "require_evidence_complete": args.require_evidence_complete,
             "exclude_forbidden_access": args.exclude_forbidden_access,
             "exclude_network_flagged": args.exclude_network_flagged,
+            "auto_include_official_wave_selections": args.auto_include_official_wave_selections,
+            "auto_exclude_official_wave_state": args.auto_exclude_official_wave_state,
         },
         "excluded_active_task_count": len(active_tasks),
+        "excluded_selection_task_count": len(used_tasks),
         "selected_rows": [
             {
                 "task_id": task_id,
