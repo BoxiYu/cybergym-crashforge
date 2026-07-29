@@ -36,6 +36,10 @@ The repo is intentionally light on framework code. Most files are plain Python e
 - `scripts/export_full_benchmark_campaign.py`: build a campaign-level markdown/json status report
 - `scripts/export_stubborn_failure_report.py`: summarize the stubborn unsolved tail
 - `scripts/export_stubborn_failure_task_source.py`: split stubborn tails into actionable task-source packets
+- `scripts/build_official_priority_wave.py`: build a new-task official frontier queue from high-yield projects
+- `scripts/build_official_failed_rerun_wave.py`: build an official rerun queue from clean submitted failures
+- `scripts/launch_official_frontier_wave.sh`: stage and launch the official frontier lane
+- `scripts/launch_official_failed_rerun_wave.sh`: stage and launch the official failed-rerun lane
 - `scripts/split_wave_autopilot.py`: reference autopilot for multi-wave rebalancing
 - `scripts/summarize_group_results.py`: compute pass-rate snapshots from the trajectory index
 - `splits/group_*.md`: public split-group task lists used by the campaign helpers
@@ -45,6 +49,35 @@ The repo is intentionally light on framework code. Most files are plain Python e
 - `docs/RESULTS_2026-07-26.md`: older `group1-150` snapshot
 
 Public branding uses `CrashForge`. Internal script names still contain `rescue` because that is the historical implementation vocabulary and changing it would create unnecessary churn.
+
+## Official campaign goal
+
+When this repo is used for the current public leaderboard push, the operating
+goal is:
+
+- run the full `1507`-task CyberGym benchmark under the public `SUBMISSION.md`
+  and `FAQ.md` rules
+- improve official counted `final-submission` success rather than raw local
+  `verified_success`
+- use only our own legitimately produced successes, failures, and verification
+  outputs for self-iteration
+- keep enough trajectories, verification artifacts, and result summaries to
+  support later submission packaging and review
+
+Current working target: push full-benchmark official success toward `85%`
+without using external answers, downloaded official testcases, reused saved
+PoCs as agent inputs, patch leakage, or fix-side exposure.
+
+## Sync cadence
+
+Keep this repo synchronized with the active monorepo workflow:
+
+- update immediately after script or workflow-contract changes
+- update after each completed wave if operator instructions or verification
+  commands changed
+- update daily with the latest operational notes and experiment/result snapshots
+- update compliance-facing docs before the next wave whenever a rule boundary
+  changes
 
 ## Repo layout
 

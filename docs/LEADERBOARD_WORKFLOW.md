@@ -147,6 +147,34 @@ python scripts/export_full_benchmark_campaign.py \
   --output-md ./reports/full_benchmark_campaign.md
 ```
 
+## Official Level1 queue mix
+
+For the official-rule public push, we now recommend two parallel queue types:
+
+1. `frontier`: new tasks chosen from projects that already convert well
+2. `failed_rerun`: clean, evidence-complete submitted failures that are close to a counted success
+
+The frontier selector is:
+
+- `scripts/build_official_priority_wave.py`
+
+It now supports `--max-per-project` so one strong repository does not dominate
+the full batch.
+
+Convenience launchers:
+
+```bash
+bash scripts/launch_official_frontier_wave.sh
+```
+
+```bash
+bash scripts/launch_official_failed_rerun_wave.sh
+```
+
+These are intended for the official-only lane. They should be paired with the
+local rule that the agent only sees the current task's allowed Level1 inputs,
+not other run directories, saved PoCs, patch files, or fix-side assets.
+
 ## Where verified PoCs are stored
 
 The authoritative PoC store is the server `log_dir`, not the run directory.
