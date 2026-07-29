@@ -162,6 +162,10 @@ The frontier selector is:
 It now supports `--max-per-project` so one strong repository does not dominate
 the full batch.
 
+It also defaults to `reports/official_level1_scoreboard_2026-07-28.json`, so
+ad hoc frontier builds stay aligned with the public official scoreboard instead
+of the older strict-only export.
+
 Convenience launchers:
 
 ```bash
@@ -179,6 +183,10 @@ bash scripts/launch_official_mismatch_wave.sh
 These are intended for the official-only lane. They should be paired with the
 local rule that the agent only sees the current task's allowed Level1 inputs,
 not other run directories, saved PoCs, patch files, or fix-side assets.
+
+Fresh binary wave launches default their server log roots to
+`server_poc_<wave_name>`, which avoids collisions when multiple official waves
+are staged at the same time.
 
 ## Where verified PoCs are stored
 

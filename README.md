@@ -70,6 +70,11 @@ Current working target: push full-benchmark official success toward `85%`
 without using external answers, downloaded official testcases, reused saved
 PoCs as agent inputs, patch leakage, or fix-side exposure.
 
+The official frontier selector defaults to the public official scoreboard, and
+fresh binary wave launchers default their server log roots to
+`server_poc_<wave_name>` so concurrent official waves do not collide on a
+shared generic log directory.
+
 ## Sync cadence
 
 Keep this repo synchronized with the active monorepo workflow:
